@@ -94,7 +94,10 @@ const quickTitles = [
 onMounted(async () => {
   window.addEventListener('paste', handlePaste)
   await categoryStore.fetchCategories()
-  if (categoryStore.categories.length > 0 && !categoryId.value) {
+  const qCat = router.currentRoute.value.query.category as string
+  if (qCat && categoryStore.categories.some((c) => String(c.id) === qCat)) {
+    categoryId.value = qCat
+  } else if (categoryStore.categories.length > 0 && !categoryId.value) {
     categoryId.value = String(categoryStore.categories[0].id)
   }
 })

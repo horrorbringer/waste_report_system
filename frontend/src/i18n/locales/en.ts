@@ -96,6 +96,54 @@ const en = {
     rbacDesc:
       'Residents securely manage their personal reports while administrators access analytics charts, category settings, and full audit trails.',
     tryDemo: 'Try Demo Accounts',
+    heroTrustGps: 'GPS & Map Verified',
+    heroTrustResponse: '24–48h Target Response',
+    heroTrustBilingual: '100% Khmer & English',
+    livePreviewBadge: 'Live Civic Incident',
+    livePreviewTitle: 'Overflowing communal dumpster',
+    livePreviewLocation: 'Street 130, Central Market, Phnom Penh',
+    livePreviewStatus: 'Dispatch In Progress',
+    livePreviewStep1: 'Reported',
+    livePreviewStep2: 'Triaged',
+    livePreviewStep3: 'En Route',
+    resolutionRate: 'Community Cleanup Resolution Rate',
+    resolutionRateDesc: '{percent}% of reported waste issues successfully resolved',
+    categoriesEyebrow: 'Classifications',
+    categoriesTitle: 'What Can You Report?',
+    categoriesDesc:
+      'Report issues across standard municipal waste classifications for rapid routing to the right sanitation crews.',
+    reportThisCategory: 'Report this issue',
+    pillarsEyebrow: 'Why EcoWatch',
+    pillarsTitle: 'Built for Transparent Civic Action',
+    pillar1Title: 'Precise GPS & Street Geotagging',
+    pillar1Desc:
+      'Pinpoint exact collection spots with Google Maps integration and Khmer street address detection so trucks never get lost.',
+    pillar2Title: 'Auditable Real-Time Status',
+    pillar2Desc:
+      'Track your report through Pending, In Progress, and Resolved with official municipal timestamps and notes.',
+    pillar3Title: 'Direct Citizen Empowerment',
+    pillar3Desc:
+      'No phone calls or bureaucracy. Anyone with a smartphone can snap a photo and demand cleaner streets.',
+    pillar4Title: 'Strict RBAC Governance',
+    pillar4Desc:
+      'Resident privacy is preserved while city administrators receive actionable dispatch dashboards and audit logs.',
+    faqEyebrow: 'Resident Guidance',
+    faqTitle: 'Frequently Asked Questions',
+    faq1Q: 'Who reviews and cleans the reported waste?',
+    faq1A:
+      'City sanitation administrators review incoming reports, prioritize hazardous issues, and dispatch the nearest municipal waste management team or contractor truck.',
+    faq2Q: 'Do I need to download an app to report waste?',
+    faq2A:
+      'No app download is needed. EcoWatch is a lightweight mobile web app that works instantly on any smartphone browser with camera and GPS support.',
+    faq3Q: 'Can I track the progress of my report?',
+    faq3A:
+      'Yes! Every submission generates a trackable report page with a 3-stage visual timeline showing when the report was submitted, triaged, and resolved.',
+    faq4Q: 'What if I encounter hazardous or chemical waste?',
+    faq4A:
+      'Please choose the Hazardous Waste category, take the photo from a safe distance of 3–5 meters, and never touch containers or contaminated items.',
+    bottomCtaTitle: 'Ready to Make Your Neighborhood Cleaner?',
+    bottomCtaDesc:
+      'Join fellow residents and city administrators in building a cleaner, healthier, and more transparent community.',
   },
   auth: {
     loginTitle: 'Welcome back',
