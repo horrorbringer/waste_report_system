@@ -2,7 +2,7 @@
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
-import { Leaf, AlertCircle } from 'lucide-vue-next'
+import { Leaf, AlertCircle, Loader2 } from 'lucide-vue-next'
 import AppLayout from '@/layouts/AppLayout.vue'
 import { useAuthStore } from '@/stores/auth'
 import { Button } from '@/components/ui/button'
@@ -103,7 +103,8 @@ async function handleSubmit() {
               />
             </div>
 
-            <Button type="submit" class="w-full" :disabled="auth.loading">
+            <Button type="submit" class="w-full gap-2" :disabled="auth.loading">
+              <Loader2 v-if="auth.loading" class="h-4 w-4 animate-spin" />
               {{ auth.loading ? t('auth.creatingAccount') : t('auth.createAccount') }}
             </Button>
           </form>

@@ -55,6 +55,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
+import { Skeleton } from '@/components/ui/skeleton'
 
 const { t, locale } = useI18n()
 const route = useRoute()
@@ -231,12 +232,94 @@ async function handleStatusSave() {
         </p>
       </div>
 
-      <!-- Loading Skeleton -->
-      <div v-if="reportStore.loading && !report" class="space-y-4">
-        <div class="h-32 animate-pulse rounded-2xl bg-muted/40" />
+      <!-- Polished Realistic Loading Skeleton -->
+      <div v-if="reportStore.loading && !report" class="space-y-6">
+        <!-- Top Hero Skeleton -->
+        <Card class="border-border/60 shadow-xs">
+          <CardContent class="p-6 space-y-5">
+            <div class="flex flex-wrap items-start justify-between gap-4">
+              <div class="space-y-2">
+                <div class="flex items-center gap-2">
+                  <Skeleton class="h-5 w-12 rounded-md" />
+                  <Skeleton class="h-5 w-28 rounded-md" />
+                  <Skeleton class="h-5 w-20 rounded-md" />
+                </div>
+                <Skeleton class="h-7 w-72 sm:w-96 rounded-md" />
+              </div>
+              <Skeleton class="h-9 w-32 rounded-lg" />
+            </div>
+            <!-- Progress Stepper Skeleton -->
+            <div class="pt-4 border-t space-y-3">
+              <div class="grid grid-cols-3 gap-3">
+                <div v-for="n in 3" :key="n" class="space-y-1.5">
+                  <Skeleton class="h-4 w-20 rounded-md" />
+                  <Skeleton class="h-3 w-32 rounded-md" />
+                </div>
+              </div>
+              <Skeleton class="h-2 w-full rounded-full" />
+            </div>
+          </CardContent>
+        </Card>
+
+        <!-- 2-Column Content Skeleton -->
         <div class="grid gap-6 lg:grid-cols-12">
-          <div class="h-96 animate-pulse rounded-2xl bg-muted/30 lg:col-span-8" />
-          <div class="h-96 animate-pulse rounded-2xl bg-muted/30 lg:col-span-4" />
+          <!-- Left Column (8 cols) -->
+          <div class="space-y-6 lg:col-span-8">
+            <!-- Map & Location Skeleton -->
+            <Card class="border-border/60 shadow-xs">
+              <CardHeader class="pb-3">
+                <Skeleton class="h-5 w-40 rounded-md" />
+              </CardHeader>
+              <CardContent class="space-y-3">
+                <Skeleton class="h-56 w-full rounded-xl" />
+                <div class="space-y-2 pt-2">
+                  <Skeleton class="h-4 w-3/4 rounded-md" />
+                  <Skeleton class="h-3.5 w-1/2 rounded-md" />
+                </div>
+              </CardContent>
+            </Card>
+
+            <!-- Activity Log Skeleton -->
+            <Card class="border-border/60 shadow-xs">
+              <CardHeader class="pb-3">
+                <Skeleton class="h-5 w-48 rounded-md" />
+              </CardHeader>
+              <CardContent class="space-y-4">
+                <div v-for="n in 2" :key="n" class="flex gap-3">
+                  <Skeleton class="h-8 w-8 rounded-full shrink-0" />
+                  <div class="space-y-1.5 flex-1">
+                    <Skeleton class="h-4 w-32 rounded-md" />
+                    <Skeleton class="h-3.5 w-full rounded-md" />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          <!-- Right Column (4 cols) -->
+          <div class="space-y-6 lg:col-span-4">
+            <!-- Photo Skeleton -->
+            <Card class="border-border/60 shadow-xs">
+              <CardHeader class="pb-3">
+                <Skeleton class="h-5 w-32 rounded-md" />
+              </CardHeader>
+              <CardContent>
+                <Skeleton class="h-64 w-full rounded-xl" />
+              </CardContent>
+            </Card>
+
+            <!-- Details Meta Skeleton -->
+            <Card class="border-border/60 shadow-xs">
+              <CardHeader class="pb-3">
+                <Skeleton class="h-5 w-28 rounded-md" />
+              </CardHeader>
+              <CardContent class="space-y-3">
+                <Skeleton class="h-4 w-full rounded-md" />
+                <Skeleton class="h-4 w-3/4 rounded-md" />
+                <Skeleton class="h-4 w-2/3 rounded-md" />
+              </CardContent>
+            </Card>
+          </div>
         </div>
       </div>
 

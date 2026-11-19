@@ -55,6 +55,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
+import { Skeleton } from '@/components/ui/skeleton'
 
 const { t, locale } = useI18n()
 const router = useRouter()
@@ -220,16 +221,22 @@ async function handleStatusSave() {
           </div>
         </CardHeader>
         <CardContent>
-          <div class="text-3xl font-bold tracking-tight font-display text-foreground">
-            {{ totalReports }}
+          <div v-if="reportStore.loading && !stats" class="space-y-2">
+            <Skeleton class="h-8 w-20" />
+            <Skeleton class="h-3 w-32" />
           </div>
-          <div class="mt-2.5 flex items-center justify-between text-xs text-muted-foreground">
-            <span>
-              {{ t('adminDashboard.acrossCategories', { count: stats?.total_categories ?? 0 }) }}
-            </span>
-            <span class="font-medium text-foreground">
-              {{ stats?.total_users ?? 0 }} residents
-            </span>
+          <div v-else>
+            <div class="text-3xl font-bold tracking-tight font-display text-foreground">
+              {{ totalReports }}
+            </div>
+            <div class="mt-2.5 flex items-center justify-between text-xs text-muted-foreground">
+              <span>
+                {{ t('adminDashboard.acrossCategories', { count: stats?.total_categories ?? 0 }) }}
+              </span>
+              <span class="font-medium text-foreground">
+                {{ stats?.total_users ?? 0 }} residents
+              </span>
+            </div>
           </div>
         </CardContent>
       </Card>
@@ -245,14 +252,20 @@ async function handleStatusSave() {
           </div>
         </CardHeader>
         <CardContent>
-          <div class="text-3xl font-bold tracking-tight font-display text-amber-600 dark:text-amber-400">
-            {{ pendingCount }}
+          <div v-if="reportStore.loading && !stats" class="space-y-2">
+            <Skeleton class="h-8 w-16" />
+            <Skeleton class="h-3 w-28" />
           </div>
-          <div class="mt-2.5 flex items-center justify-between text-xs">
-            <span class="text-muted-foreground">{{ t('adminDashboard.awaitingTriage') }}</span>
-            <span class="font-mono tabular-nums text-amber-600 dark:text-amber-400 font-medium">
-              {{ pendingPercent }}%
-            </span>
+          <div v-else>
+            <div class="text-3xl font-bold tracking-tight font-display text-amber-600 dark:text-amber-400">
+              {{ pendingCount }}
+            </div>
+            <div class="mt-2.5 flex items-center justify-between text-xs">
+              <span class="text-muted-foreground">{{ t('adminDashboard.awaitingTriage') }}</span>
+              <span class="font-mono tabular-nums text-amber-600 dark:text-amber-400 font-medium">
+                {{ pendingPercent }}%
+              </span>
+            </div>
           </div>
         </CardContent>
       </Card>
@@ -268,14 +281,20 @@ async function handleStatusSave() {
           </div>
         </CardHeader>
         <CardContent>
-          <div class="text-3xl font-bold tracking-tight font-display text-blue-600 dark:text-blue-400">
-            {{ inProgressCount }}
+          <div v-if="reportStore.loading && !stats" class="space-y-2">
+            <Skeleton class="h-8 w-16" />
+            <Skeleton class="h-3 w-28" />
           </div>
-          <div class="mt-2.5 flex items-center justify-between text-xs">
-            <span class="text-muted-foreground">{{ t('adminDashboard.cleanupUnderway') }}</span>
-            <span class="font-mono tabular-nums text-blue-600 dark:text-blue-400 font-medium">
-              {{ inProgressPercent }}%
-            </span>
+          <div v-else>
+            <div class="text-3xl font-bold tracking-tight font-display text-blue-600 dark:text-blue-400">
+              {{ inProgressCount }}
+            </div>
+            <div class="mt-2.5 flex items-center justify-between text-xs">
+              <span class="text-muted-foreground">{{ t('adminDashboard.cleanupUnderway') }}</span>
+              <span class="font-mono tabular-nums text-blue-600 dark:text-blue-400 font-medium">
+                {{ inProgressPercent }}%
+              </span>
+            </div>
           </div>
         </CardContent>
       </Card>
@@ -291,24 +310,30 @@ async function handleStatusSave() {
           </div>
         </CardHeader>
         <CardContent>
-          <div class="flex items-baseline justify-between">
-            <div class="text-3xl font-bold tracking-tight font-display text-emerald-600 dark:text-emerald-400">
-              {{ resolvedCount }}
+          <div v-if="reportStore.loading && !stats" class="space-y-2">
+            <Skeleton class="h-8 w-16" />
+            <Skeleton class="h-3 w-28" />
+          </div>
+          <div v-else>
+            <div class="flex items-baseline justify-between">
+              <div class="text-3xl font-bold tracking-tight font-display text-emerald-600 dark:text-emerald-400">
+                {{ resolvedCount }}
+              </div>
+              <span class="font-mono text-sm font-semibold tabular-nums text-emerald-600 dark:text-emerald-400">
+                {{ resolutionRate }}%
+              </span>
             </div>
-            <span class="font-mono text-sm font-semibold tabular-nums text-emerald-600 dark:text-emerald-400">
-              {{ resolutionRate }}%
-            </span>
+            <!-- Resolution Progress Bar -->
+            <div class="mt-2.5 h-1.5 w-full overflow-hidden rounded-full bg-muted">
+              <div
+                class="h-full rounded-full bg-emerald-500 transition-all duration-500"
+                :style="{ width: `${resolutionRate}%` }"
+              />
+            </div>
+            <p class="mt-1.5 text-[11px] text-muted-foreground">
+              {{ t('adminDashboard.resolutionRate', { rate: resolutionRate }) }}
+            </p>
           </div>
-          <!-- Resolution Progress Bar -->
-          <div class="mt-2.5 h-1.5 w-full overflow-hidden rounded-full bg-muted">
-            <div
-              class="h-full rounded-full bg-emerald-500 transition-all duration-500"
-              :style="{ width: `${resolutionRate}%` }"
-            />
-          </div>
-          <p class="mt-1.5 text-[11px] text-muted-foreground">
-            {{ t('adminDashboard.resolutionRate', { rate: resolutionRate }) }}
-          </p>
         </CardContent>
       </Card>
     </div>

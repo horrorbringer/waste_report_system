@@ -15,6 +15,7 @@ import {
   HelpCircle,
   ImageIcon,
   Info,
+  Loader2,
   Map,
   MapPin,
   Maximize2,
@@ -902,7 +903,8 @@ async function handleSubmit() {
                   class="h-10 min-w-36 gap-2 font-medium shadow-sm transition"
                   :disabled="reportStore.loading || !isFormValid"
                 >
-                  <Send class="h-4 w-4" :class="{ 'animate-pulse': reportStore.loading }" />
+                  <Loader2 v-if="reportStore.loading" class="h-4 w-4 animate-spin" />
+                  <Send v-else class="h-4 w-4" />
                   {{ reportStore.loading ? t('submitReport.submitting') : t('submitReport.submitBtn') }}
                 </Button>
               </div>

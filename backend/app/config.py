@@ -1,8 +1,16 @@
+import os
+import tempfile
 from pathlib import Path
 from pydantic import field_validator
 from pydantic_settings import BaseSettings
 
 BASE_DIR = Path(__file__).resolve().parent.parent
+
+
+def default_upload_dir() -> Path:
+    if os.environ.get("VERCEL") == "1":
+        return Path(tempfile.gettempdir()) / "ecowatch-uploads"
+    return BASE_DIR / "uploads"
 
 
 def normalize_database_url(url: str) -> str:
@@ -43,7 +51,7 @@ class Settings(BaseSettings):
     S3_FOLDER: str = "waste_reports"
 
     # Upload security constraints
-    UPLOAD_DIR: Path = BASE_DIR / "uploads"
+    UPLOAD_DIR: Path = default_upload_dir()
     ALLOWED_EXTENSIONS: set[str] = {"png", "jpg", "jpeg", "webp"}
     MAX_FILE_SIZE: int = 5 * 1024 * 1024  # 5 MB
 

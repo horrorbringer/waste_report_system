@@ -49,6 +49,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
+import { Skeleton } from '@/components/ui/skeleton'
 
 const { t, locale } = useI18n()
 const reportStore = useReportStore()
@@ -308,9 +309,28 @@ function resetFilters() {
         </div>
       </div>
 
-      <!-- Loading State -->
+      <!-- Loading State: Structured Skeletons -->
       <div v-if="reportStore.loading && myReports.length === 0" class="grid gap-4 md:grid-cols-2">
-        <Card v-for="n in 4" :key="n" class="h-44 animate-pulse rounded-xl bg-muted/40" />
+        <Card v-for="n in 4" :key="n" class="border-border/70 p-5 space-y-4">
+          <div class="flex items-start justify-between">
+            <div class="space-y-1.5 flex-1">
+              <div class="flex gap-2">
+                <Skeleton class="h-5 w-12 rounded-md" />
+                <Skeleton class="h-5 w-24 rounded-md" />
+              </div>
+              <Skeleton class="h-5 w-3/4 rounded-md mt-2" />
+            </div>
+            <Skeleton class="h-6 w-20 rounded-full" />
+          </div>
+          <div class="space-y-2 pt-2 border-t border-border/50">
+            <Skeleton class="h-4 w-4/5 rounded-md" />
+            <Skeleton class="h-3.5 w-1/3 rounded-md" />
+          </div>
+          <div class="flex items-center justify-between pt-1">
+            <Skeleton class="h-4 w-28 rounded-md" />
+            <Skeleton class="h-8 w-20 rounded-lg" />
+          </div>
+        </Card>
       </div>
 
       <!-- Empty State: Zero Reports Ever -->

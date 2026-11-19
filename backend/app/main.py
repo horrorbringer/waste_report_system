@@ -11,7 +11,6 @@ from app.routers import settings as settings_router
 
 @asynccontextmanager
 async def lifespan(_: FastAPI):
-    settings.UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
     Base.metadata.create_all(bind=engine)
     ensure_schema_columns(engine)
     yield
