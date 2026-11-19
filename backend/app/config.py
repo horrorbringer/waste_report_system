@@ -61,6 +61,7 @@ class Settings(BaseSettings):
         "http://localhost:4173",
         "https://waste-report-system-frontend.vercel.app",
         "https://www.wastereport.website",
+        "https://wastereport.website",
     ]
 
     model_config = {
