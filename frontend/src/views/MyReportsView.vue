@@ -4,16 +4,12 @@ import { useI18n } from 'vue-i18n'
 import {
   ArrowUpRight,
   Calendar,
-  CheckCircle2,
-  Clock,
   Compass,
-  FileText,
   Filter,
   Grid,
   ImageIcon,
   Inbox,
   LayoutList,
-  Loader2,
   MapPin,
   PlusCircle,
   RefreshCw,
@@ -70,10 +66,17 @@ onMounted(async () => {
 
 const myReports = computed(() => reportStore.myReports)
 
-const totalCount = computed(() => myReports.value.length)
-const pendingCount = computed(() => myReports.value.filter((r) => r.status === 'Pending').length)
-const inProgressCount = computed(() => myReports.value.filter((r) => r.status === 'In Progress').length)
-const resolvedCount = computed(() => myReports.value.filter((r) => r.status === 'Resolved').length)
+const statusFilters = computed(() => {
+  const counts: Record<ReportStatus, number> = { Pending: 0, 'In Progress': 0, Resolved: 0 }
+  for (const report of myReports.value) counts[report.status]++
+
+  return [
+    { value: 'ALL', label: 'common.all', count: myReports.value.length },
+    { value: 'Pending', label: 'status.pending', count: counts.Pending },
+    { value: 'In Progress', label: 'status.inProgress', count: counts['In Progress'] },
+    { value: 'Resolved', label: 'status.resolved', count: counts.Resolved },
+  ] as const
+})
 
 const filteredReports = computed(() => {
   let list = myReports.value.filter((r) => {
@@ -146,85 +149,20 @@ function resetFilters() {
         </div>
       </div>
 
-      <!-- Quick Metrics & Filter Cards -->
-      <div class="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
-        <!-- Metric 1: All -->
-        <button
+      <div class="mb-4 flex flex-wrap gap-1.5" role="group" :aria-label="t('myReports.statusFilter')">
+        <Button
+          v-for="filter in statusFilters"
+          :key="filter.value"
           type="button"
-          class="flex flex-col items-start rounded-xl border p-3.5 text-left transition-all hover:bg-muted/30 focus:outline-none"
-          :class="[
-            statusFilter === 'ALL'
-              ? 'border-primary ring-2 ring-primary/20 bg-primary/5 shadow-sm'
-              : 'border-border/70 bg-card hover:border-border',
-          ]"
-          @click="statusFilter = 'ALL'"
+          size="sm"
+          :variant="statusFilter === filter.value ? 'secondary' : 'outline'"
+          :aria-pressed="statusFilter === filter.value"
+          class="h-9 gap-1.5 rounded-full px-2.5 font-medium aria-pressed:border-primary/30 aria-pressed:bg-primary/10 aria-pressed:text-primary"
+          @click="statusFilter = filter.value"
         >
-          <div class="flex w-full items-center justify-between text-muted-foreground">
-            <span class="text-xs font-medium">{{ t('myReports.statAll') }}</span>
-            <FileText class="h-4 w-4 text-primary" />
-          </div>
-          <span class="mt-2 text-2xl font-bold font-display text-foreground">{{ totalCount }}</span>
-        </button>
-
-        <!-- Metric 2: Pending -->
-        <button
-          type="button"
-          class="flex flex-col items-start rounded-xl border p-3.5 text-left transition-all hover:bg-muted/30 focus:outline-none"
-          :class="[
-            statusFilter === 'Pending'
-              ? 'border-amber-500 ring-2 ring-amber-500/20 bg-amber-500/5 shadow-sm'
-              : 'border-border/70 bg-card hover:border-border',
-          ]"
-          @click="statusFilter = 'Pending'"
-        >
-          <div class="flex w-full items-center justify-between text-amber-600 dark:text-amber-400">
-            <span class="text-xs font-medium">{{ t('myReports.statPending') }}</span>
-            <Clock class="h-4 w-4 text-amber-500" />
-          </div>
-          <span class="mt-2 text-2xl font-bold font-display text-amber-600 dark:text-amber-400">
-            {{ pendingCount }}
-          </span>
-        </button>
-
-        <!-- Metric 3: In Progress -->
-        <button
-          type="button"
-          class="flex flex-col items-start rounded-xl border p-3.5 text-left transition-all hover:bg-muted/30 focus:outline-none"
-          :class="[
-            statusFilter === 'In Progress'
-              ? 'border-blue-500 ring-2 ring-blue-500/20 bg-blue-500/5 shadow-sm'
-              : 'border-border/70 bg-card hover:border-border',
-          ]"
-          @click="statusFilter = 'In Progress'"
-        >
-          <div class="flex w-full items-center justify-between text-blue-600 dark:text-blue-400">
-            <span class="text-xs font-medium">{{ t('myReports.statInProgress') }}</span>
-            <Loader2 class="h-4 w-4 text-blue-500" />
-          </div>
-          <span class="mt-2 text-2xl font-bold font-display text-blue-600 dark:text-blue-400">
-            {{ inProgressCount }}
-          </span>
-        </button>
-
-        <!-- Metric 4: Resolved -->
-        <button
-          type="button"
-          class="flex flex-col items-start rounded-xl border p-3.5 text-left transition-all hover:bg-muted/30 focus:outline-none"
-          :class="[
-            statusFilter === 'Resolved'
-              ? 'border-emerald-500 ring-2 ring-emerald-500/20 bg-emerald-500/5 shadow-sm'
-              : 'border-border/70 bg-card hover:border-border',
-          ]"
-          @click="statusFilter = 'Resolved'"
-        >
-          <div class="flex w-full items-center justify-between text-emerald-600 dark:text-emerald-400">
-            <span class="text-xs font-medium">{{ t('myReports.statResolved') }}</span>
-            <CheckCircle2 class="h-4 w-4 text-emerald-500" />
-          </div>
-          <span class="mt-2 text-2xl font-bold font-display text-emerald-600 dark:text-emerald-400">
-            {{ resolvedCount }}
-          </span>
-        </button>
+          {{ t(filter.label) }}
+          <span class="text-xs tabular-nums text-muted-foreground">{{ filter.count }}</span>
+        </Button>
       </div>
 
       <!-- Action & Search Toolbar -->

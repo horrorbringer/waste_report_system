@@ -83,6 +83,11 @@ class StatusHistoryResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
 
+class ReportUploadPolicy(BaseModel):
+    max_file_size_mb: int
+    allowed_extensions: list[str]
+
+
 class ReportUpdateStatus(BaseModel):
     status: ReportStatus
     note: str | None = Field(default=None, max_length=1000)

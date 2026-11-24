@@ -6,13 +6,26 @@ from sqlalchemy.orm import Session, joinedload
 from app.database import get_db
 from app.deps import get_current_user, require_admin, require_resident_or_admin
 from app.models import Category, StatusHistory, User, WasteReport
-from app.schemas import ReportDetailResponse, ReportResponse, ReportUpdateStatus
+from app.schemas import ReportDetailResponse, ReportResponse, ReportUpdateStatus, ReportUploadPolicy
+from app.services.settings_service import resolve_settings
 from app.services.storage.registry import validate_and_upload_image
 from app.utils import serialize_report, serialize_report_detail
 
 router = APIRouter(prefix="/api/reports", tags=["Reports"])
 
 VALID_STATUSES = {"Pending", "In Progress", "Resolved"}
+
+
+@router.get("/upload-policy", response_model=ReportUploadPolicy)
+def get_report_upload_policy(
+    db: Session = Depends(get_db),
+    _: User = Depends(require_resident_or_admin),
+) -> ReportUploadPolicy:
+    resolved = resolve_settings(db)
+    return ReportUploadPolicy(
+        max_file_size_mb=resolved.max_file_size_mb,
+        allowed_extensions=resolved.allowed_extensions,
+    )
 
 
 @router.post("", response_model=ReportDetailResponse, status_code=status.HTTP_201_CREATED)

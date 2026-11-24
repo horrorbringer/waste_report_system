@@ -56,6 +56,11 @@ export interface WasteReport {
   updated_at: string
 }
 
+export interface ReportUploadPolicy {
+  max_file_size_mb: number
+  allowed_extensions: string[]
+}
+
 export interface WasteReportDetail extends WasteReport {
   status_history: StatusHistory[]
 }

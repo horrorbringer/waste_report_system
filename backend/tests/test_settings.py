@@ -62,6 +62,25 @@ def test_settings_endpoints_enforce_admin_rbac(
     assert client.post("/api/admin/settings/storage/test", headers=res_headers).status_code == 403
 
 
+def test_resident_upload_policy_reflects_admin_settings(
+    client: TestClient, seed_users_and_categories: dict
+):
+    path = "/api/reports/upload-policy"
+    assert client.get(path).status_code == 401
+
+    payload = _base_settings_payload()
+    payload["storage"]["max_file_size_mb"] = 7
+    payload["storage"]["allowed_extensions"] = ["webp"]
+    saved = client.put(
+        "/api/admin/settings", json=payload, headers=seed_users_and_categories["admin_headers"]
+    )
+    assert saved.status_code == 200
+
+    policy = client.get(path, headers=seed_users_and_categories["resident1_headers"])
+    assert policy.status_code == 200
+    assert policy.json() == {"max_file_size_mb": 7, "allowed_extensions": ["webp"]}
+
+
 def test_admin_settings_encrypts_and_preserves_secrets(
     client: TestClient, test_db: Session, seed_users_and_categories: dict
 ):

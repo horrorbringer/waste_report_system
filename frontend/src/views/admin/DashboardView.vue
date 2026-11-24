@@ -338,95 +338,6 @@ async function handleStatusSave() {
       </Card>
     </div>
 
-    <!-- Interactive Pipeline Segmented Bar (Across All Statuses) -->
-    <div v-if="totalReports > 0" class="rounded-xl border bg-card p-4 shadow-sm">
-      <div class="mb-2 flex flex-wrap items-center justify-between gap-2 text-xs">
-        <span class="font-semibold text-foreground flex items-center gap-1.5">
-          <TrendingUp class="h-3.5 w-3.5 text-primary" />
-          {{ t('adminDashboard.resolutionProgress') }}
-        </span>
-        <div class="flex flex-wrap items-center gap-4 text-xs">
-          <span class="flex items-center gap-1.5 text-amber-600 dark:text-amber-400 font-medium">
-            <span class="h-2 w-2 rounded-full bg-amber-500" />
-            {{ t('status.pending') }}: {{ pendingCount }} ({{ pendingPercent }}%)
-          </span>
-          <span class="flex items-center gap-1.5 text-blue-600 dark:text-blue-400 font-medium">
-            <span class="h-2 w-2 rounded-full bg-blue-500" />
-            {{ t('status.inProgress') }}: {{ inProgressCount }} ({{ inProgressPercent }}%)
-          </span>
-          <span class="flex items-center gap-1.5 text-emerald-600 dark:text-emerald-400 font-medium">
-            <span class="h-2 w-2 rounded-full bg-emerald-500" />
-            {{ t('status.resolved') }}: {{ resolvedCount }} ({{ resolutionRate }}%)
-          </span>
-        </div>
-      </div>
-      <!-- Continuous Segmented Bar -->
-      <div class="flex h-3 w-full overflow-hidden rounded-full bg-muted/60 p-0.5">
-        <div
-          v-if="pendingCount > 0"
-          class="h-full bg-amber-500 transition-all duration-300 first:rounded-l-full last:rounded-r-full"
-          :style="{ width: `${(pendingCount / totalReports) * 100}%` }"
-          :title="`Pending: ${pendingCount}`"
-        />
-        <div
-          v-if="inProgressCount > 0"
-          class="h-full bg-blue-500 transition-all duration-300 first:rounded-l-full last:rounded-r-full"
-          :style="{ width: `${(inProgressCount / totalReports) * 100}%` }"
-          :title="`In Progress: ${inProgressCount}`"
-        />
-        <div
-          v-if="resolvedCount > 0"
-          class="h-full bg-emerald-500 transition-all duration-300 first:rounded-l-full last:rounded-r-full"
-          :style="{ width: `${(resolvedCount / totalReports) * 100}%` }"
-          :title="`Resolved: ${resolvedCount}`"
-        />
-      </div>
-    </div>
-
-    <!-- Native shadcn-vue Charts Section -->
-    <div class="grid gap-6 lg:grid-cols-7">
-      <!-- Status Donut Chart (3 cols) -->
-      <Card class="border-border/60 shadow-sm lg:col-span-3">
-        <CardHeader class="pb-3">
-          <div class="flex items-center justify-between">
-            <CardTitle class="text-base font-semibold">
-              {{ t('adminDashboard.statusChartTitle') }}
-            </CardTitle>
-            <Badge variant="outline" class="text-[11px] font-normal text-muted-foreground">
-              Total: {{ totalReports }}
-            </Badge>
-          </div>
-          <CardDescription class="text-xs">
-            {{ t('adminDashboard.statusChartDesc') }}
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <StatusDonutChart :data="stats?.status_distribution ?? []" />
-        </CardContent>
-      </Card>
-
-      <!-- Category Bar Chart (4 cols) -->
-      <Card class="border-border/60 shadow-sm lg:col-span-4">
-        <CardHeader class="pb-3">
-          <div class="flex items-center justify-between">
-            <CardTitle class="text-base font-semibold">
-              {{ t('adminDashboard.categoryChartTitle') }}
-            </CardTitle>
-            <Badge v-if="topCategoryName" variant="secondary" class="gap-1 text-[11px] font-normal">
-              <Sparkles class="h-3 w-3 text-primary" />
-              {{ t('adminDashboard.topCategory', { name: topCategoryName }) }}
-            </Badge>
-          </div>
-          <CardDescription class="text-xs">
-            {{ t('adminDashboard.categoryChartDesc') }}
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <CategoryBarChart :data="stats?.category_distribution ?? []" />
-        </CardContent>
-      </Card>
-    </div>
-
     <!-- Enhanced Recent Submissions Table with Photo Thumbnails & Inline Status Modal -->
     <Card class="border-border/60 shadow-sm">
       <CardHeader class="pb-3">
@@ -584,6 +495,95 @@ async function handleStatusSave() {
         </div>
       </CardContent>
     </Card>
+
+    <!-- Interactive Pipeline Segmented Bar (Across All Statuses) -->
+    <div v-if="totalReports > 0" class="rounded-xl border bg-card p-4 shadow-sm">
+      <div class="mb-2 flex flex-wrap items-center justify-between gap-2 text-xs">
+        <span class="font-semibold text-foreground flex items-center gap-1.5">
+          <TrendingUp class="h-3.5 w-3.5 text-primary" />
+          {{ t('adminDashboard.resolutionProgress') }}
+        </span>
+        <div class="flex flex-wrap items-center gap-4 text-xs">
+          <span class="flex items-center gap-1.5 text-amber-600 dark:text-amber-400 font-medium">
+            <span class="h-2 w-2 rounded-full bg-amber-500" />
+            {{ t('status.pending') }}: {{ pendingCount }} ({{ pendingPercent }}%)
+          </span>
+          <span class="flex items-center gap-1.5 text-blue-600 dark:text-blue-400 font-medium">
+            <span class="h-2 w-2 rounded-full bg-blue-500" />
+            {{ t('status.inProgress') }}: {{ inProgressCount }} ({{ inProgressPercent }}%)
+          </span>
+          <span class="flex items-center gap-1.5 text-emerald-600 dark:text-emerald-400 font-medium">
+            <span class="h-2 w-2 rounded-full bg-emerald-500" />
+            {{ t('status.resolved') }}: {{ resolvedCount }} ({{ resolutionRate }}%)
+          </span>
+        </div>
+      </div>
+      <!-- Continuous Segmented Bar -->
+      <div class="flex h-3 w-full overflow-hidden rounded-full bg-muted/60 p-0.5">
+        <div
+          v-if="pendingCount > 0"
+          class="h-full bg-amber-500 transition-all duration-300 first:rounded-l-full last:rounded-r-full"
+          :style="{ width: `${(pendingCount / totalReports) * 100}%` }"
+          :title="`Pending: ${pendingCount}`"
+        />
+        <div
+          v-if="inProgressCount > 0"
+          class="h-full bg-blue-500 transition-all duration-300 first:rounded-l-full last:rounded-r-full"
+          :style="{ width: `${(inProgressCount / totalReports) * 100}%` }"
+          :title="`In Progress: ${inProgressCount}`"
+        />
+        <div
+          v-if="resolvedCount > 0"
+          class="h-full bg-emerald-500 transition-all duration-300 first:rounded-l-full last:rounded-r-full"
+          :style="{ width: `${(resolvedCount / totalReports) * 100}%` }"
+          :title="`Resolved: ${resolvedCount}`"
+        />
+      </div>
+    </div>
+
+    <!-- Native shadcn-vue Charts Section -->
+    <div class="grid gap-6 lg:grid-cols-7">
+      <!-- Status Donut Chart (3 cols) -->
+      <Card class="border-border/60 shadow-sm lg:col-span-3">
+        <CardHeader class="pb-3">
+          <div class="flex items-center justify-between">
+            <CardTitle class="text-base font-semibold">
+              {{ t('adminDashboard.statusChartTitle') }}
+            </CardTitle>
+            <Badge variant="outline" class="text-[11px] font-normal text-muted-foreground">
+              Total: {{ totalReports }}
+            </Badge>
+          </div>
+          <CardDescription class="text-xs">
+            {{ t('adminDashboard.statusChartDesc') }}
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <StatusDonutChart :data="stats?.status_distribution ?? []" />
+        </CardContent>
+      </Card>
+
+      <!-- Category Bar Chart (4 cols) -->
+      <Card class="border-border/60 shadow-sm lg:col-span-4">
+        <CardHeader class="pb-3">
+          <div class="flex items-center justify-between">
+            <CardTitle class="text-base font-semibold">
+              {{ t('adminDashboard.categoryChartTitle') }}
+            </CardTitle>
+            <Badge v-if="topCategoryName" variant="secondary" class="gap-1 text-[11px] font-normal">
+              <Sparkles class="h-3 w-3 text-primary" />
+              {{ t('adminDashboard.topCategory', { name: topCategoryName }) }}
+            </Badge>
+          </div>
+          <CardDescription class="text-xs">
+            {{ t('adminDashboard.categoryChartDesc') }}
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <CategoryBarChart :data="stats?.category_distribution ?? []" />
+        </CardContent>
+      </Card>
+    </div>
 
     <!-- Quick Status Update Dialog Directly from Dashboard -->
     <Dialog v-model:open="statusDialogOpen">
