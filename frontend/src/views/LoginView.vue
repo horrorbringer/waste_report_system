@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { Leaf, AlertCircle, ShieldCheck, User as UserIcon, Loader2 } from 'lucide-vue-next'
@@ -46,6 +46,10 @@ function fillDemo(role: 'admin' | 'resident') {
     password.value = 'Resident@123'
   }
 }
+
+watch(() => route.query.demo, (role) => {
+  if (role === 'admin' || role === 'resident') fillDemo(role)
+}, { immediate: true })
 </script>
 
 <template>

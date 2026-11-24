@@ -5,6 +5,7 @@ import type {
   AdminDashboardStats,
   PublicStats,
   ReportStatus,
+  ReportUploadPolicy,
   WasteReport,
   WasteReportDetail,
 } from '@/types'
@@ -67,6 +68,11 @@ export const useReportStore = defineStore('reports', () => {
     }
   }
 
+  async function fetchUploadPolicy() {
+    const { data } = await api.get<ReportUploadPolicy>('/reports/upload-policy')
+    return data
+  }
+
   async function submitReport(formData: FormData) {
     loading.value = true
     try {
@@ -114,6 +120,7 @@ export const useReportStore = defineStore('reports', () => {
     fetchMyReports,
     fetchAllReports,
     fetchReportDetail,
+    fetchUploadPolicy,
     submitReport,
     updateReportStatus,
     fetchAdminStats,

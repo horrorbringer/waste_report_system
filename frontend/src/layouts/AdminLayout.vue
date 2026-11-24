@@ -46,9 +46,10 @@ function handleLogout() {
 
 <template>
   <div class="flex min-h-screen bg-muted/20">
-    <!-- Desktop Sidebar -->
-    <aside class="hidden w-64 shrink-0 flex-col border-r bg-card md:flex">
-      <div class="flex h-16 items-center gap-2.5 border-b px-6">
+    <!-- Desktop Sidebar (Sticky to Viewport) -->
+    <aside class="hidden w-64 shrink-0 flex-col border-r bg-card md:flex md:sticky md:top-0 md:h-screen md:max-h-screen">
+      <!-- Fixed Brand Header -->
+      <div class="flex h-16 shrink-0 items-center gap-2.5 border-b px-6">
         <div class="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground shadow-sm">
           <Leaf class="h-4 w-4" />
         </div>
@@ -62,64 +63,66 @@ function handleLogout() {
         </div>
       </div>
 
-      <div class="flex flex-1 flex-col justify-between p-4">
-        <div class="space-y-6">
-          <div>
-            <p class="text-eyebrow mb-2.5 px-3">
-              {{ t('nav.administration') }}
-            </p>
-            <nav class="space-y-1">
-              <RouterLink
-                v-for="item in navItems"
-                :key="item.to"
-                :to="item.to"
-                class="flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors"
-                :class="
-                  route.path === item.to
-                    ? 'bg-primary text-primary-foreground shadow-sm'
-                    : 'text-muted-foreground hover:bg-muted hover:text-foreground'
-                "
-              >
-                <component :is="item.icon" class="h-4 w-4 shrink-0" />
-                <span>{{ item.label }}</span>
-              </RouterLink>
-            </nav>
-          </div>
-
-          <div>
-            <p class="text-eyebrow mb-2.5 px-3">
-              {{ t('nav.portalShortcuts') }}
-            </p>
-            <nav class="space-y-1">
-              <RouterLink
-                to="/my-reports"
-                class="flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-              >
-                <ClipboardList class="h-4 w-4 shrink-0" />
-                <span>{{ t('nav.myReports') }}</span>
-              </RouterLink>
-              <RouterLink
-                to="/"
-                class="flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-              >
-                <Home class="h-4 w-4 shrink-0" />
-                <span>{{ t('nav.publicSite') }}</span>
-              </RouterLink>
-            </nav>
-          </div>
+      <!-- Scrollable Navigation Region -->
+      <div class="flex-1 overflow-y-auto p-4 space-y-6">
+        <div>
+          <p class="text-eyebrow mb-2.5 px-3">
+            {{ t('nav.administration') }}
+          </p>
+          <nav class="space-y-1">
+            <RouterLink
+              v-for="item in navItems"
+              :key="item.to"
+              :to="item.to"
+              class="flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors"
+              :class="
+                route.path === item.to
+                  ? 'bg-primary text-primary-foreground shadow-sm'
+                  : 'text-muted-foreground hover:bg-muted hover:text-foreground'
+              "
+            >
+              <component :is="item.icon" class="h-4 w-4 shrink-0" />
+              <span>{{ item.label }}</span>
+            </RouterLink>
+          </nav>
         </div>
 
-        <div class="rounded-lg border bg-muted/40 p-3">
-          <div class="flex items-center gap-2">
+        <div>
+          <p class="text-eyebrow mb-2.5 px-3">
+            {{ t('nav.portalShortcuts') }}
+          </p>
+          <nav class="space-y-1">
+            <RouterLink
+              to="/my-reports"
+              class="flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+            >
+              <ClipboardList class="h-4 w-4 shrink-0" />
+              <span>{{ t('nav.myReports') }}</span>
+            </RouterLink>
+            <RouterLink
+              to="/"
+              class="flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+            >
+              <Home class="h-4 w-4 shrink-0" />
+              <span>{{ t('nav.publicSite') }}</span>
+            </RouterLink>
+          </nav>
+        </div>
+      </div>
+
+      <!-- Sticky Pinned Bottom User Profile Card -->
+      <div class="sticky bottom-0 z-10 shrink-0 border-t bg-card/95 p-4 backdrop-blur-xs">
+        <div class="rounded-xl border border-border/80 bg-muted/40 p-3 shadow-xs">
+          <div class="flex items-center gap-2.5">
             <div class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary/15 text-primary">
               <ShieldCheck class="h-4 w-4" />
             </div>
             <div class="min-w-0 flex-1">
-              <p class="truncate text-sm font-medium">{{ auth.user?.full_name }}</p>
-              <p class="truncate text-xs text-muted-foreground">{{ auth.user?.email }}</p>
+              <p class="truncate text-sm font-medium text-foreground">{{ auth.user?.full_name || 'System Administrator' }}</p>
+              <p class="truncate text-xs text-muted-foreground">{{ auth.user?.email || 'admin@waste.local' }}</p>
             </div>
           </div>
-          <Button variant="outline" size="sm" class="mt-3 w-full" @click="handleLogout">
+          <Button variant="outline" size="sm" class="mt-3 w-full gap-1.5 text-xs font-medium" @click="handleLogout">
             <LogOut class="h-3.5 w-3.5" />
             {{ t('nav.signOut') }}
           </Button>
@@ -173,8 +176,8 @@ function handleLogout() {
         </nav>
       </div>
 
-      <!-- Desktop Top Bar -->
-      <header class="hidden h-16 items-center justify-between border-b bg-card px-8 md:flex">
+      <!-- Desktop Top Bar (Sticky) -->
+      <header class="hidden h-16 items-center justify-between border-b bg-card/95 px-8 backdrop-blur-xs md:flex md:sticky md:top-0 md:z-20">
         <div>
           <h1 class="text-lg font-semibold tracking-tight">{{ pageTitle }}</h1>
         </div>

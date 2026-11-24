@@ -39,7 +39,7 @@ import { Badge } from '@/components/ui/badge'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Alert, AlertDescription } from '@/components/ui/alert'
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import {
   Dialog,
   DialogContent,
@@ -92,7 +92,10 @@ onMounted(async () => {
   }
 })
 
-const report = computed(() => reportStore.currentReport)
+const report = computed(() => {
+  const current = reportStore.currentReport
+  return current?.id === Number(route.params.id) ? current : null
+})
 
 const hasGps = computed(() => {
   return report.value?.latitude !== null && report.value?.longitude !== null
@@ -111,6 +114,10 @@ const directionsUrl = computed(() => {
 const isMyReport = computed(() => {
   return auth.user && report.value && auth.user.id === report.value.user_id
 })
+
+const justSubmitted = computed(() => Boolean(
+  report.value && isMyReport.value && window.history.state?.submittedReportId === report.value.id,
+))
 
 const currentStepIndex = computed(() => {
   if (!report.value) return 0
@@ -207,9 +214,19 @@ async function handleStatusSave() {
         <AlertDescription>{{ statusSuccess }}</AlertDescription>
       </Alert>
 
-      <!-- Reassurance / Celebration Banner -->
+      <Alert v-if="justSubmitted && report" variant="success" role="status" class="mb-6">
+        <CheckCircle2 class="h-4 w-4" />
+        <AlertTitle>{{ t('submitReport.confirmationTitle') }}</AlertTitle>
+        <AlertDescription>
+          <p>{{ t('submitReport.confirmationReference', { id: report.id }) }}</p>
+          <RouterLink :to="{ name: 'my-reports' }" class="mt-1 inline-flex font-medium underline">
+            {{ t('home.ctaMyReports') }}
+          </RouterLink>
+        </AlertDescription>
+      </Alert>
+
       <div
-        v-if="report && report.status === 'Resolved'"
+        v-else-if="report && report.status === 'Resolved'"
         class="mb-6 flex items-center gap-3 rounded-xl border border-emerald-500/30 bg-emerald-500/10 p-4 text-xs text-emerald-800 dark:text-emerald-200 shadow-sm"
       >
         <div class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-emerald-500/20 text-emerald-600 dark:text-emerald-400">
