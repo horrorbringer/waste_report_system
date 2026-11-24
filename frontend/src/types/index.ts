@@ -59,10 +59,44 @@ export interface WasteReport {
 export interface ReportUploadPolicy {
   max_file_size_mb: number
   allowed_extensions: string[]
+  max_photos: number
+  max_total_size_mb: number
 }
 
 export interface WasteReportDetail extends WasteReport {
   status_history: StatusHistory[]
+  photo_paths: string[]
+  location_district: number | null
+  public_district: number | null
+  public_province: number | null
+}
+
+export interface ReportArea {
+  code: number
+  name: string
+  name_km: string
+}
+
+export interface ReportProvince extends ReportArea {
+  districts: ReportArea[]
+}
+
+export interface CommunityReport {
+  category_name: string
+  category_name_km: string | null
+  province: number
+  province_name: string
+  province_name_km: string
+  district: number | null
+  district_name: string | null
+  district_name_km: string | null
+  reported_on: string
+  status: ReportStatus
+}
+
+export interface CommunityReportsPage {
+  items: CommunityReport[]
+  has_more: boolean
 }
 
 export interface PublicStats {

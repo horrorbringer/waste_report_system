@@ -10,6 +10,7 @@ import {
   LogIn,
   UserPlus,
   Home,
+  Users,
 } from 'lucide-vue-next'
 import { useAuthStore } from '@/stores/auth'
 import { translateRole } from '@/i18n'
@@ -51,6 +52,13 @@ function handleLogout() {
               </Button>
             </RouterLink>
 
+            <Button as-child :variant="route.name === 'community-reports' ? 'secondary' : 'ghost'" size="sm" class="gap-1.5 text-xs">
+              <RouterLink :to="{ name: 'community-reports' }">
+                <Users class="h-3.5 w-3.5" />
+                {{ t('community.nav') }}
+              </RouterLink>
+            </Button>
+
             <template v-if="auth.isAuthenticated">
               <RouterLink to="/reports/new">
                 <Button :variant="route.path === '/reports/new' ? 'secondary' : 'ghost'" size="sm" class="gap-1.5 text-xs">
@@ -81,7 +89,7 @@ function handleLogout() {
           <LanguageSwitcher />
 
           <template v-if="auth.isAuthenticated && auth.user">
-            <div class="hidden items-center gap-2 sm:flex">
+            <div class="hidden items-center gap-2 lg:flex">
               <span class="text-xs sm:text-sm font-medium truncate max-w-[120px]">{{ auth.user.full_name }}</span>
               <Badge :variant="auth.isAdmin ? 'default' : 'secondary'" class="text-[10px] px-2 py-0.5">
                 {{ translateRole(auth.user.role, t) }}
@@ -126,6 +134,15 @@ function handleLogout() {
       >
         <Home class="h-4 w-4" />
         <span>{{ t('nav.home') }}</span>
+      </RouterLink>
+
+      <RouterLink
+        :to="{ name: 'community-reports' }"
+        class="flex flex-col items-center justify-center gap-0.5 py-1 text-[10px] font-medium transition"
+        :class="route.name === 'community-reports' ? 'font-bold text-primary' : 'text-muted-foreground hover:text-foreground'"
+      >
+        <Users class="h-4 w-4" />
+        <span>{{ t('community.nav') }}</span>
       </RouterLink>
 
       <RouterLink

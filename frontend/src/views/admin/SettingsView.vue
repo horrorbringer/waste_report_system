@@ -38,7 +38,7 @@ import { Switch } from '@/components/ui/switch'
 const { t, locale } = useI18n()
 const settingsStore = useSettingsStore()
 
-const ALL_FORMATS = ['png', 'jpg', 'jpeg', 'webp'] as const
+const ALL_FORMATS = ['png', 'jpg', 'jpeg', 'webp', 'avif'] as const
 type SettingsTab = 'storage' | 'policy' | 'platform' | 'system'
 
 const activeTab = ref<SettingsTab>('storage')
@@ -50,7 +50,7 @@ const form = reactive({
   allow_registration: true,
   provider: 'cloudinary' as StorageProviderId,
   max_file_size_mb: 5,
-  allowed_extensions: ['png', 'jpg', 'jpeg', 'webp'] as string[],
+  allowed_extensions: [...ALL_FORMATS] as string[],
   cloudinary: {
     cloud_name: '',
     api_key: '',
@@ -118,7 +118,7 @@ function buildPayload(): AdminSettingsUpdatePayload {
       provider: form.provider,
       max_file_size_mb: Number(form.max_file_size_mb) || 5,
       allowed_extensions:
-        form.allowed_extensions.length > 0 ? form.allowed_extensions : ['png', 'jpg', 'jpeg', 'webp'],
+        form.allowed_extensions.length > 0 ? form.allowed_extensions : [...ALL_FORMATS],
       cloudinary: {
         cloud_name: form.cloudinary.cloud_name.trim(),
         api_key: form.cloudinary.api_key.trim(),

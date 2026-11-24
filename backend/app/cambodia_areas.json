@@ -1,0 +1,265 @@
+{
+  "source": "https://db.ncdd.gov.kh/gazetteer/view/index.castle",
+  "provinces": [
+    {"code": 1, "name": "Banteay Meanchey Province", "name_km": "ខេត្តបន្ទាយមានជ័យ", "districts": [
+      {"code": 102, "name": "Mongkol Borei District", "name_km": "ស្រុកមង្គលបូរី"},
+      {"code": 103, "name": "Phnum Srok District", "name_km": "ស្រុកភ្នំស្រុក"},
+      {"code": 104, "name": "Preah Netr Preah District", "name_km": "ស្រុកព្រះនេត្រព្រះ"},
+      {"code": 105, "name": "Ou Chrov District", "name_km": "ស្រុកអូរជ្រៅ"},
+      {"code": 106, "name": "Serei Saophoan Municipality", "name_km": "ក្រុងសិរីសោភ័ណ"},
+      {"code": 107, "name": "Thma Puok District", "name_km": "ស្រុកថ្មពួក"},
+      {"code": 108, "name": "Svay Chek District", "name_km": "ស្រុកស្វាយចេក"},
+      {"code": 109, "name": "Malai District", "name_km": "ស្រុកម៉ាឡៃ"},
+      {"code": 110, "name": "Paoy Paet Municipality", "name_km": "ក្រុងប៉ោយប៉ែត"}
+    ]},
+    {"code": 2, "name": "Battambang Province", "name_km": "ខេត្តបាត់ដំបង", "districts": [
+      {"code": 201, "name": "Banan District", "name_km": "ស្រុកបាណន់"},
+      {"code": 202, "name": "Thma Koul District", "name_km": "ស្រុកថ្មគោល"},
+      {"code": 203, "name": "Battambang Municipality", "name_km": "ក្រុងបាត់ដំបង"},
+      {"code": 204, "name": "Bavel District", "name_km": "ស្រុកបវេល"},
+      {"code": 205, "name": "Aek Phnum District", "name_km": "ស្រុកឯកភ្នំ"},
+      {"code": 206, "name": "Moung Ruessei District", "name_km": "ស្រុកមោងឫស្សី"},
+      {"code": 207, "name": "Rotonak Mondol District", "name_km": "ស្រុករតនមណ្ឌល"},
+      {"code": 208, "name": "Sangkae District", "name_km": "ស្រុកសង្កែ"},
+      {"code": 209, "name": "Samlout District", "name_km": "ស្រុកសំឡូត"},
+      {"code": 210, "name": "Sampov Lun District", "name_km": "ស្រុកសំពៅលូន"},
+      {"code": 211, "name": "Phnum Proek District", "name_km": "ស្រុកភ្នំព្រឹក"},
+      {"code": 212, "name": "Kamrieng District", "name_km": "ស្រុកកំរៀង"},
+      {"code": 213, "name": "Koas Krala District", "name_km": "ស្រុកគាស់ក្រឡ"},
+      {"code": 214, "name": "Rukh Kiri District", "name_km": "ស្រុករុក្ខគិរី"}
+    ]},
+    {"code": 3, "name": "Kampong Cham Province", "name_km": "ខេត្តកំពង់ចាម", "districts": [
+      {"code": 301, "name": "Batheay District", "name_km": "ស្រុកបាធាយ"},
+      {"code": 302, "name": "Chamkar Leu District", "name_km": "ស្រុកចំការលើ"},
+      {"code": 303, "name": "Cheung Prey District", "name_km": "ស្រុកជើងព្រៃ"},
+      {"code": 305, "name": "Kampong Cham Municipality", "name_km": "ក្រុងកំពង់ចាម"},
+      {"code": 306, "name": "Kampong Siem District", "name_km": "ស្រុកកំពង់សៀម"},
+      {"code": 307, "name": "Kang Meas District", "name_km": "ស្រុកកងមាស"},
+      {"code": 308, "name": "Kaoh Soutin District", "name_km": "ស្រុកកោះសូទិន"},
+      {"code": 313, "name": "Prey Chhor District", "name_km": "ស្រុកព្រៃឈរ"},
+      {"code": 314, "name": "Srei Santhor District", "name_km": "ស្រុកស្រីសន្ធរ"},
+      {"code": 315, "name": "Stueng Trang District", "name_km": "ស្រុកស្ទឹងត្រង់"}
+    ]},
+    {"code": 4, "name": "Kampong Chhnang Province", "name_km": "ខេត្តកំពង់ឆ្នាំង", "districts": [
+      {"code": 401, "name": "Baribour District", "name_km": "ស្រុកបរិបូណ៌"},
+      {"code": 402, "name": "Chol Kiri District", "name_km": "ស្រុកជលគីរី"},
+      {"code": 403, "name": "Kampong Chhnang Municipality", "name_km": "ក្រុងកំពង់ឆ្នាំង"},
+      {"code": 404, "name": "Kampong Leaeng District", "name_km": "ស្រុកកំពង់លែង"},
+      {"code": 405, "name": "Kampong Tralach District", "name_km": "ស្រុកកំពង់ត្រឡាច"},
+      {"code": 406, "name": "Rolea B'ier District", "name_km": "ស្រុករលាប្អៀរ"},
+      {"code": 407, "name": "Sameakki Mean Chey District", "name_km": "ស្រុកសាមគ្គីមានជ័យ"},
+      {"code": 408, "name": "Tuek Phos District", "name_km": "ស្រុកទឹកផុស"}
+    ]},
+    {"code": 5, "name": "Kampong Speu Province", "name_km": "ខេត្តកំពង់ស្ពឺ", "districts": [
+      {"code": 501, "name": "Basedth District", "name_km": "ស្រុកបរសេដ្ឋ"},
+      {"code": 502, "name": "Chbar Mon Municipality", "name_km": "ក្រុងច្បារមន"},
+      {"code": 503, "name": "Kong Pisei District", "name_km": "ស្រុកគងពិសី"},
+      {"code": 504, "name": "Aoral District", "name_km": "ស្រុកឱរ៉ាល់"},
+      {"code": 506, "name": "Phnum Sruoch District", "name_km": "ស្រុកភ្នំស្រួច"},
+      {"code": 507, "name": "Samraong Tong District", "name_km": "ស្រុកសំរោងទង"},
+      {"code": 508, "name": "Thpong District", "name_km": "ស្រុកថ្ពង"},
+      {"code": 509, "name": "Odongk Maechay Municipality", "name_km": "ក្រុងឧដុង្គម៉ែជ័យ"},
+      {"code": 510, "name": "Samkkei Munichay District", "name_km": "ស្រុកសាមគ្គីមុនីជ័យ"}
+    ]},
+    {"code": 6, "name": "Kampong Thom Province", "name_km": "ខេត្តកំពង់ធំ", "districts": [
+      {"code": 601, "name": "Baray District", "name_km": "ស្រុកបារាយណ៍"},
+      {"code": 602, "name": "Kampong Svay District", "name_km": "ស្រុកកំពង់ស្វាយ"},
+      {"code": 603, "name": "Stueng Saen Municipality", "name_km": "ក្រុងស្ទឹងសែន"},
+      {"code": 604, "name": "Prasat Ballangk District", "name_km": "ស្រុកប្រាសាទបល្ល័ង្គ"},
+      {"code": 605, "name": "Prasat Sambour District", "name_km": "ស្រុកប្រាសាទសំបូរ"},
+      {"code": 606, "name": "Sandan District", "name_km": "ស្រុកសណ្ដាន់"},
+      {"code": 607, "name": "Santuk District", "name_km": "ស្រុកសន្ទុក"},
+      {"code": 608, "name": "Stoung District", "name_km": "ស្រុកស្ទោង"},
+      {"code": 609, "name": "Taing Kouk District", "name_km": "ស្រុកតាំងគោក"}
+    ]},
+    {"code": 7, "name": "Kampot Province", "name_km": "ខេត្តកំពត", "districts": [
+      {"code": 701, "name": "Angkor Chey District", "name_km": "ស្រុកអង្គរជ័យ"},
+      {"code": 702, "name": "Banteay Meas District", "name_km": "ស្រុកបន្ទាយមាស"},
+      {"code": 703, "name": "Chhuk District", "name_km": "ស្រុកឈូក"},
+      {"code": 704, "name": "Chum Kiri District", "name_km": "ស្រុកជុំគិរី"},
+      {"code": 705, "name": "Dang Tong District", "name_km": "ស្រុកដងទង់"},
+      {"code": 706, "name": "Kampong Trach District", "name_km": "ស្រុកកំពង់ត្រាច"},
+      {"code": 707, "name": "Tuek Chhou District", "name_km": "ស្រុកទឹកឈូ"},
+      {"code": 708, "name": "Kampot Municipality", "name_km": "ក្រុងកំពត"},
+      {"code": 709, "name": "Bokor Municipality", "name_km": "ក្រុងបូកគោ"}
+    ]},
+    {"code": 8, "name": "Kandal Province", "name_km": "ខេត្តកណ្ដាល", "districts": [
+      {"code": 801, "name": "Kandal Stueng District", "name_km": "ស្រុកកណ្ដាលស្ទឹង"},
+      {"code": 802, "name": "Kien Svay District", "name_km": "ស្រុកកៀនស្វាយ"},
+      {"code": 803, "name": "Khsach Kandal District", "name_km": "ស្រុកខ្សាច់កណ្ដាល"},
+      {"code": 804, "name": "Kaoh Thum District", "name_km": "ស្រុកកោះធំ"},
+      {"code": 805, "name": "Leuk Daek District", "name_km": "ស្រុកលើកដែក"},
+      {"code": 806, "name": "Lvea Aem District", "name_km": "ស្រុកល្វាឯម"},
+      {"code": 807, "name": "Mukh Kampul District", "name_km": "ស្រុកមុខកំពូល"},
+      {"code": 808, "name": "Angk Snuol District", "name_km": "ស្រុកអង្គស្នួល"},
+      {"code": 809, "name": "Ponhea Lueu District", "name_km": "ស្រុកពញាឮ"},
+      {"code": 810, "name": "S'ang District", "name_km": "ស្រុកស្អាង"},
+      {"code": 811, "name": "Ta Khmau Municipality", "name_km": "ក្រុងតាខ្មៅ"},
+      {"code": 812, "name": "Sampeou Poun Municipality", "name_km": "ក្រុងសំពៅពូន"},
+      {"code": 813, "name": "Akreiy Ksatr Municipality", "name_km": "ក្រុងអរិយក្សត្រ"}
+    ]},
+    {"code": 9, "name": "Koh Kong Province", "name_km": "ខេត្តកោះកុង", "districts": [
+      {"code": 901, "name": "Botum Sakor District", "name_km": "ស្រុកបុទុមសាគរ"},
+      {"code": 902, "name": "Kiri Sakor District", "name_km": "ស្រុកគិរីសាគរ"},
+      {"code": 903, "name": "Kaoh Kong District", "name_km": "ស្រុកកោះកុង"},
+      {"code": 904, "name": "Khemara Phoumin Municipality", "name_km": "ក្រុងខេមរភូមិន្ទ"},
+      {"code": 905, "name": "Mondol Seima District", "name_km": "ស្រុកមណ្ឌលសីមា"},
+      {"code": 906, "name": "Srae Ambel District", "name_km": "ស្រុកស្រែ អំបិល"},
+      {"code": 907, "name": "Thma Bang District", "name_km": "ស្រុកថ្មបាំង"}
+    ]},
+    {"code": 10, "name": "Kratie Province", "name_km": "ខេត្តក្រចេះ", "districts": [
+      {"code": 1001, "name": "Chhloung District", "name_km": "ស្រុកឆ្លូង"},
+      {"code": 1002, "name": "Kracheh Municipality", "name_km": "ក្រុងក្រចេះ"},
+      {"code": 1003, "name": "Prek Prasab District", "name_km": "ស្រុកព្រែកប្រសព្វ"},
+      {"code": 1004, "name": "Sambour District", "name_km": "ស្រុកសំបូរ"},
+      {"code": 1005, "name": "Snuol District", "name_km": "ស្រុកស្នួល"},
+      {"code": 1006, "name": "Chetr Borei District", "name_km": "ស្រុកចិត្របុរី"},
+      {"code": 1007, "name": "Ou Krieng Saenchey District", "name_km": "ស្រុកអូរគ្រៀងសែនជ័យ"}
+    ]},
+    {"code": 11, "name": "Mondul Kiri Province", "name_km": "ខេត្តមណ្ឌលគិរី", "districts": [
+      {"code": 1101, "name": "Kaev Seima District", "name_km": "ស្រុកកែវសីមា"},
+      {"code": 1102, "name": "Kaoh Nheaek District", "name_km": "ស្រុកកោះញែក"},
+      {"code": 1103, "name": "Ou Reang District", "name_km": "ស្រុកអូររាំង"},
+      {"code": 1104, "name": "Pech Chreada District", "name_km": "ស្រុកពេជ្រាដា"},
+      {"code": 1105, "name": "Saen Monourom Municipality", "name_km": "ក្រុងសែនមនោរម្យ"}
+    ]},
+    {"code": 12, "name": "Phnom Penh Capital", "name_km": "រាជធានីភ្នំពេញ", "districts": [
+      {"code": 1201, "name": "Chamkar Mon Khan", "name_km": "ខណ្ឌចំការមន"},
+      {"code": 1202, "name": "Doun Penh Khan", "name_km": "ខណ្ឌដូនពេញ"},
+      {"code": 1203, "name": "Prampir Meakkakra Khan", "name_km": "ខណ្ឌ៧មករា"},
+      {"code": 1204, "name": "Tuol Kouk Khan", "name_km": "ខណ្ឌទួលគោក"},
+      {"code": 1205, "name": "Dangkao Khan", "name_km": "ខណ្ឌដង្កោ"},
+      {"code": 1206, "name": "Mean Chey Khan", "name_km": "ខណ្ឌមានជ័យ"},
+      {"code": 1207, "name": "Russey Keo Khan", "name_km": "ខណ្ឌឫស្សីកែវ"},
+      {"code": 1208, "name": "Saensokh Khan", "name_km": "ខណ្ឌសែនសុខ"},
+      {"code": 1209, "name": "Pur SenChey Khan", "name_km": "ខណ្ឌពោធិ៍សែនជ័យ"},
+      {"code": 1210, "name": "Chrouy Changvar Khan", "name_km": "ខណ្ឌជ្រោយចង្វារ"},
+      {"code": 1211, "name": "Praek Pnov Khan", "name_km": "ខណ្ឌព្រែកព្នៅ"},
+      {"code": 1212, "name": "Chbar Ampov Khan", "name_km": "ខណ្ឌច្បារអំពៅ"},
+      {"code": 1213, "name": "Boeng Keng Kang Khan", "name_km": "ខណ្ឌបឹងកេងកង"},
+      {"code": 1214, "name": "Kamboul Khan", "name_km": "ខណ្ឌកំបូល"}
+    ]},
+    {"code": 13, "name": "Preah Vihear Province", "name_km": "ខេត្តព្រះវិហារ", "districts": [
+      {"code": 1301, "name": "Chey Saen District", "name_km": "ស្រុកជ័យសែន"},
+      {"code": 1302, "name": "Chhaeb District", "name_km": "ស្រុកឆែប"},
+      {"code": 1303, "name": "Choam Ksant District", "name_km": "ស្រុកជាំក្សាន្ដ"},
+      {"code": 1304, "name": "Kuleaen District", "name_km": "ស្រុកគូលែន"},
+      {"code": 1305, "name": "Rovieng District", "name_km": "ស្រុករវៀង"},
+      {"code": 1306, "name": "Sangkum Thmei District", "name_km": "ស្រុកសង្គមថ្មី"},
+      {"code": 1307, "name": "Tbaeng Mean Chey District", "name_km": "ស្រុកត្បែងមានជ័យ"},
+      {"code": 1308, "name": "Preah Vihear Municipality", "name_km": "ក្រុងព្រះវិហារ"}
+    ]},
+    {"code": 14, "name": "Prey Veng Province", "name_km": "ខេត្តព្រៃវែង", "districts": [
+      {"code": 1401, "name": "Ba Phnum District", "name_km": "ស្រុកបាភ្នំ"},
+      {"code": 1402, "name": "Kamchay Mear District", "name_km": "ស្រុកកំចាយមារ"},
+      {"code": 1403, "name": "Kampong Trabaek District", "name_km": "ស្រុកកំពង់ត្របែក"},
+      {"code": 1404, "name": "Kanhchriech District", "name_km": "ស្រុកកញ្ជ្រៀច"},
+      {"code": 1405, "name": "Me Sang District", "name_km": "ស្រុកមេសាង"},
+      {"code": 1406, "name": "Peam Chor District", "name_km": "ស្រុកពាមជរ"},
+      {"code": 1407, "name": "Peam Ro District", "name_km": "ស្រុកពាមរក៍"},
+      {"code": 1408, "name": "Pea Reang District", "name_km": "ស្រុកពារាំង"},
+      {"code": 1409, "name": "Preah Sdach District", "name_km": "ស្រុកព្រះស្ដេច"},
+      {"code": 1410, "name": "Prey Veng Municipality", "name_km": "ក្រុងព្រៃវែង"},
+      {"code": 1411, "name": "Pur Rieng District", "name_km": "ស្រុកពោធិ៍រៀង"},
+      {"code": 1412, "name": "Sithor Kandal District", "name_km": "ស្រុកស៊ីធរកណ្ដាល"},
+      {"code": 1413, "name": "Svay Antor District", "name_km": "ស្រុកស្វាយអន្ទរ"}
+    ]},
+    {"code": 15, "name": "Pursat Province", "name_km": "ខេត្តពោធិ៍សាត់", "districts": [
+      {"code": 1501, "name": "Bakan District", "name_km": "ស្រុកបាកាន"},
+      {"code": 1502, "name": "Kandieng District", "name_km": "ស្រុកកណ្ដៀង"},
+      {"code": 1503, "name": "Krakor District", "name_km": "ស្រុកក្រគរ"},
+      {"code": 1504, "name": "Phnum Kravanh District", "name_km": "ស្រុកភ្នំក្រវ៉ាញ"},
+      {"code": 1505, "name": "Pursat Municipality", "name_km": "ក្រុងពោធិ៍សាត់"},
+      {"code": 1506, "name": "Veal Veaeng District", "name_km": "ស្រុកវាលវែង"},
+      {"code": 1507, "name": "Ta Lou Senchey District", "name_km": "ស្រុកតាលោសែនជ័យ"}
+    ]},
+    {"code": 16, "name": "Ratanak Kiri Province", "name_km": "ខេត្តរតនគិរី", "districts": [
+      {"code": 1601, "name": "Andoung Meas District", "name_km": "ស្រុកអណ្ដូងមាស"},
+      {"code": 1602, "name": "Ban Lung Municipality", "name_km": "ក្រុងបានលុង"},
+      {"code": 1603, "name": "Bar Kaev District", "name_km": "ស្រុកបរកែវ"},
+      {"code": 1604, "name": "Koun Mom District", "name_km": "ស្រុកកូនមុំ"},
+      {"code": 1605, "name": "Lumphat District", "name_km": "ស្រុកលំផាត់"},
+      {"code": 1606, "name": "Ou Chum District", "name_km": "ស្រុកអូរជុំ"},
+      {"code": 1607, "name": "Ou Ya Dav District", "name_km": "ស្រុកអូរយ៉ាដាវ"},
+      {"code": 1608, "name": "Ta Veaeng District", "name_km": "ស្រុកតាវែង"},
+      {"code": 1609, "name": "Veun Sai District", "name_km": "ស្រុកវើនសៃ"}
+    ]},
+    {"code": 17, "name": "Siemreap Province", "name_km": "ខេត្តសៀមរាប", "districts": [
+      {"code": 1701, "name": "Angkor Chum District", "name_km": "ស្រុកអង្គរជុំ"},
+      {"code": 1702, "name": "Angkor Thum District", "name_km": "ស្រុកអង្គរធំ"},
+      {"code": 1703, "name": "Banteay Srei District", "name_km": "ស្រុកបន្ទាយស្រី"},
+      {"code": 1704, "name": "Chi Kraeng District", "name_km": "ស្រុកជីក្រែង"},
+      {"code": 1706, "name": "Kralanh District", "name_km": "ស្រុកក្រឡាញ់"},
+      {"code": 1707, "name": "Puok District", "name_km": "ស្រុកពួក"},
+      {"code": 1709, "name": "Prasat Bakong District", "name_km": "ស្រុកប្រាសាទបាគង"},
+      {"code": 1710, "name": "Siem Reap Municipality", "name_km": "ក្រុងសៀមរាប"},
+      {"code": 1711, "name": "Soutr Nikom District", "name_km": "ស្រុកសូទ្រនិគម"},
+      {"code": 1712, "name": "Srei Snam District", "name_km": "ស្រុកស្រីស្នំ"},
+      {"code": 1713, "name": "Svay Leu District", "name_km": "ស្រុកស្វាយលើ"},
+      {"code": 1714, "name": "Varin District", "name_km": "ស្រុកវ៉ារិន"},
+      {"code": 1715, "name": "Run Ta Aek Techo Sen Municipality", "name_km": "ក្រុងរុនតាឯកតេជោសែន"}
+    ]},
+    {"code": 18, "name": "Preah Sihanouk Province", "name_km": "ខេត្តព្រះសីហនុ", "districts": [
+      {"code": 1801, "name": "Preah Sihanouk Municipality", "name_km": "ក្រុងព្រះសីហនុ"},
+      {"code": 1802, "name": "Prey Nob District", "name_km": "ស្រុកព្រៃនប់"},
+      {"code": 1803, "name": "Stueng Hav District", "name_km": "ស្រុកស្ទឹងហាវ"},
+      {"code": 1804, "name": "Kampong Seila District", "name_km": "ស្រុកកំពង់សីលា"},
+      {"code": 1805, "name": "Kaoh Rung Municipality", "name_km": "ក្រុងកោះរ៉ុង"},
+      {"code": 1806, "name": "Kampong Soam Municipality", "name_km": "ក្រុងកំពង់សោម"}
+    ]},
+    {"code": 19, "name": "Stung Treng Province", "name_km": "ខេត្តស្ទឹងត្រែង", "districts": [
+      {"code": 1901, "name": "Sesan District", "name_km": "ស្រុកសេសាន"},
+      {"code": 1902, "name": "Siem Bouk District", "name_km": "ស្រុកសៀមបូក"},
+      {"code": 1903, "name": "Siem Pang District", "name_km": "ស្រុកសៀមប៉ាង"},
+      {"code": 1904, "name": "Stueng Traeng Municipality", "name_km": "ក្រុងស្ទឹងត្រែង"},
+      {"code": 1905, "name": "Thala Barivat District", "name_km": "ស្រុកថាឡាបរិវ៉ាត់"},
+      {"code": 1906, "name": "Borei Ou Svay Senchey District", "name_km": "ស្រុកបុរីអូរស្វាយសែនជ័យ"}
+    ]},
+    {"code": 20, "name": "Svay Rieng Province", "name_km": "ខេត្តស្វាយរៀង", "districts": [
+      {"code": 2001, "name": "Chantrea District", "name_km": "ស្រុកចន្ទ្រា"},
+      {"code": 2002, "name": "Kampong Rou District", "name_km": "ស្រុកកំពង់រោទិ៍"},
+      {"code": 2003, "name": "Rumduol District", "name_km": "ស្រុករំដួល"},
+      {"code": 2004, "name": "Romeas Haek District", "name_km": "ស្រុករមាសហែក"},
+      {"code": 2005, "name": "Svay Chrum District", "name_km": "ស្រុកស្វាយជ្រំ"},
+      {"code": 2006, "name": "Svay Rieng Municipality", "name_km": "ក្រុងស្វាយរៀង"},
+      {"code": 2007, "name": "Svay Teab District", "name_km": "ស្រុកស្វាយទាប"},
+      {"code": 2008, "name": "Bavet Municipality", "name_km": "ក្រុងបាវិត"}
+    ]},
+    {"code": 21, "name": "Takeo Province", "name_km": "ខេត្តតាកែវ", "districts": [
+      {"code": 2101, "name": "Angkor Borei District", "name_km": "ស្រុកអង្គរបូរី"},
+      {"code": 2102, "name": "Bati District", "name_km": "ស្រុកបាទី"},
+      {"code": 2103, "name": "Borei Cholsar District", "name_km": "ស្រុកបូរីជលសារ"},
+      {"code": 2104, "name": "Kiri Vong District", "name_km": "ស្រុកគីរីវង់"},
+      {"code": 2105, "name": "Kaoh Andaet District", "name_km": "ស្រុកកោះអណ្ដែត"},
+      {"code": 2106, "name": "Prey Kabbas District", "name_km": "ស្រុកព្រៃកប្បាស"},
+      {"code": 2107, "name": "Samraong District", "name_km": "ស្រុកសំរោង"},
+      {"code": 2108, "name": "Doun Kaev Municipality", "name_km": "ក្រុងដូនកែវ"},
+      {"code": 2109, "name": "Tram Kak District", "name_km": "ស្រុកត្រាំកក់"},
+      {"code": 2110, "name": "Treang District", "name_km": "ស្រុកទ្រាំង"}
+    ]},
+    {"code": 22, "name": "Oddar Meanchey Province", "name_km": "ខេត្តឧត្ដរមានជ័យ", "districts": [
+      {"code": 2201, "name": "Anlong Veaeng District", "name_km": "ស្រុកអន្លង់វែង"},
+      {"code": 2202, "name": "Banteay Ampil District", "name_km": "ស្រុកបន្ទាយអំពិល"},
+      {"code": 2203, "name": "Chong Kal District", "name_km": "ស្រុកចុងកាល់"},
+      {"code": 2204, "name": "Samraong Municipality", "name_km": "ក្រុងសំរោង"},
+      {"code": 2205, "name": "Trapeang Prasat District", "name_km": "ស្រុកត្រពាំងប្រាសាទ"}
+    ]},
+    {"code": 23, "name": "Kep Province", "name_km": "ខេត្តកែប", "districts": [
+      {"code": 2301, "name": "Damnak Chang'aeur District", "name_km": "ស្រុកដំណាក់ចង្អើរ"},
+      {"code": 2302, "name": "Kaeb Municipality", "name_km": "ក្រុងកែប"}
+    ]},
+    {"code": 24, "name": "Pailin Province", "name_km": "ខេត្តប៉ៃលិន", "districts": [
+      {"code": 2401, "name": "Pailin Municipality", "name_km": "ក្រុងប៉ៃលិន"},
+      {"code": 2402, "name": "Sala Krau District", "name_km": "ស្រុកសាលាក្រៅ"}
+    ]},
+    {"code": 25, "name": "Tboung Khmum Province", "name_km": "ខេត្តត្បូងឃ្មុំ", "districts": [
+      {"code": 2501, "name": "Dambae District", "name_km": "ស្រុកតំបែរ"},
+      {"code": 2502, "name": "Krouch Chhmar District", "name_km": "ស្រុកក្រូចឆ្មារ"},
+      {"code": 2503, "name": "Memot District", "name_km": "ស្រុកមេមត់"},
+      {"code": 2504, "name": "Ou Reang Ov District", "name_km": "ស្រុកអូររាំងឪ"},
+      {"code": 2505, "name": "Ponhea Kraek District", "name_km": "ស្រុកពញាក្រែក"},
+      {"code": 2506, "name": "Suong Municipality", "name_km": "ក្រុងសួង"},
+      {"code": 2507, "name": "Tboung Khmum District", "name_km": "ស្រុកត្បូងឃ្មុំ"}
+    ]}
+  ]
+}

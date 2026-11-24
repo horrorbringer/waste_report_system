@@ -21,6 +21,9 @@ class LocalStorageProvider(StorageProvider):
         target_path.write_bytes(contents)
         return f"/uploads/{filename}"
 
+    def delete(self, public_id: str, extension: str) -> None:
+        (self.upload_dir / f"{public_id}.{extension}").unlink(missing_ok=True)
+
     def test_connection(self) -> tuple[bool, str]:
         try:
             self.upload_dir.mkdir(parents=True, exist_ok=True)

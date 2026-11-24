@@ -19,6 +19,12 @@ const routes: RouteRecordRaw[] = [
     meta: { titleKey: 'routes.home' },
   },
   {
+    path: '/community-reports',
+    name: 'community-reports',
+    component: () => import('@/views/CommunityReportsView.vue'),
+    meta: { titleKey: 'community.title' },
+  },
+  {
     path: '/login',
     name: 'login',
     component: () => import('@/views/LoginView.vue'),

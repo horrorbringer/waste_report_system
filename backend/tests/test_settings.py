@@ -78,7 +78,9 @@ def test_resident_upload_policy_reflects_admin_settings(
 
     policy = client.get(path, headers=seed_users_and_categories["resident1_headers"])
     assert policy.status_code == 200
-    assert policy.json() == {"max_file_size_mb": 7, "allowed_extensions": ["webp"]}
+    assert policy.json() == {
+        "max_file_size_mb": 7, "allowed_extensions": ["webp"], "max_photos": 5, "max_total_size_mb": 35,
+    }
 
 
 def test_admin_settings_encrypts_and_preserves_secrets(

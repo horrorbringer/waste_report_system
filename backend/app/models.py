@@ -1,5 +1,5 @@
 from datetime import datetime, timezone
-from sqlalchemy import Boolean, DateTime, Float, ForeignKey, Integer, String, Text
+from sqlalchemy import JSON, Boolean, DateTime, Float, ForeignKey, Integer, String, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.database import Base
@@ -52,6 +52,10 @@ class WasteReport(Base):
     latitude: Mapped[float | None] = mapped_column(Float, nullable=True)
     longitude: Mapped[float | None] = mapped_column(Float, nullable=True)
     photo_path: Mapped[str | None] = mapped_column(String(500), nullable=True)
+    photo_paths: Mapped[list[str] | None] = mapped_column(JSON(none_as_null=True), nullable=True)
+    location_district: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    public_district: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    public_province: Mapped[int | None] = mapped_column(Integer, nullable=True)
     status: Mapped[str] = mapped_column(String(30), default="Pending", nullable=False, index=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now, nullable=False)
     updated_at: Mapped[datetime] = mapped_column(

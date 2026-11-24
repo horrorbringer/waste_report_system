@@ -20,5 +20,9 @@ class StorageProvider(ABC):
         """Persist validated image bytes and return a public URL or path."""
 
     @abstractmethod
+    def delete(self, public_id: str, extension: str) -> None:
+        """Remove an image by its upload identifier if it exists."""
+
+    @abstractmethod
     def test_connection(self) -> tuple[bool, str]:
         """Verify provider credentials and connectivity."""

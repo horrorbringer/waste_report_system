@@ -1,8 +1,12 @@
-from datetime import datetime
+from datetime import date, datetime
 from typing import Annotated, Literal
-from pydantic import BaseModel, ConfigDict, Field, StringConstraints
+from pydantic import AfterValidator, BaseModel, ConfigDict, Field, StringConstraints, model_validator
+
+from app.cambodia_areas import validate_district_code, validate_province_code
 
 ReportStatus = Literal["Pending", "In Progress", "Resolved"]
+DistrictCode = Annotated[int, AfterValidator(validate_district_code)]
+ProvinceCode = Annotated[int, AfterValidator(validate_province_code)]
 UserRole = Literal["resident", "admin"]
 EmailField = Annotated[
     str,
@@ -86,11 +90,45 @@ class StatusHistoryResponse(BaseModel):
 class ReportUploadPolicy(BaseModel):
     max_file_size_mb: int
     allowed_extensions: list[str]
+    max_photos: int
+    max_total_size_mb: int
 
 
 class ReportUpdateStatus(BaseModel):
     status: ReportStatus
     note: str | None = Field(default=None, max_length=1000)
+
+
+class ReportPublication(BaseModel):
+    district: DistrictCode | None
+    province: ProvinceCode | None = None
+
+    @model_validator(mode="after")
+    def match_district_to_province(self) -> "ReportPublication":
+        if self.district is not None:
+            district_province = self.district // 100
+            if self.province is not None and self.province != district_province:
+                raise ValueError("This district belongs to a different province.")
+            self.province = district_province
+        return self
+
+
+class CommunityReport(BaseModel):
+    category_name: str
+    category_name_km: str | None
+    province: ProvinceCode
+    province_name: str
+    province_name_km: str
+    district: DistrictCode | None
+    district_name: str | None
+    district_name_km: str | None
+    reported_on: date
+    status: ReportStatus
+
+
+class CommunityReportsPage(BaseModel):
+    items: list[CommunityReport]
+    has_more: bool
 
 
 class ReportResponse(BaseModel):
@@ -116,6 +154,10 @@ class ReportResponse(BaseModel):
 
 class ReportDetailResponse(ReportResponse):
     status_history: list[StatusHistoryResponse] = []
+    photo_paths: list[str] = Field(default_factory=list)
+    location_district: DistrictCode | None = None
+    public_district: DistrictCode | None = None
+    public_province: ProvinceCode | None = None
 
 
 class PublicStatsResponse(BaseModel):
@@ -219,7 +261,7 @@ class S3SettingsUpdate(BaseModel):
 class StorageSettingsUpdate(BaseModel):
     provider: StorageProviderId
     max_file_size_mb: int = Field(default=5, ge=1, le=25)
-    allowed_extensions: list[str] = Field(default_factory=lambda: ["png", "jpg", "jpeg", "webp"])
+    allowed_extensions: list[str] = Field(default_factory=lambda: ["png", "jpg", "jpeg", "webp", "avif"])
     cloudinary: CloudinarySettingsUpdate
     s3: S3SettingsUpdate
 

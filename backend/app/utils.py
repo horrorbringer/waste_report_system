@@ -40,4 +40,11 @@ def serialize_status_history(entry: StatusHistory) -> StatusHistoryResponse:
 def serialize_report_detail(report: WasteReport) -> ReportDetailResponse:
     base = serialize_report(report)
     history = [serialize_status_history(entry) for entry in report.status_history]
-    return ReportDetailResponse(**base.model_dump(), status_history=history)
+    return ReportDetailResponse(
+        **base.model_dump(),
+        status_history=history,
+        photo_paths=report.photo_paths or ([report.photo_path] if report.photo_path else []),
+        location_district=report.location_district,
+        public_district=report.public_district,
+        public_province=report.public_province or (report.public_district // 100 if report.public_district else None),
+    )

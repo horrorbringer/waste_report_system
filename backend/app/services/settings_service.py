@@ -19,7 +19,7 @@ from app.services.storage.cloudinary_provider import CloudinaryStorageProvider
 from app.services.storage.local_provider import LocalStorageProvider
 from app.services.storage.s3_provider import S3CompatibleStorageProvider
 
-SUPPORTED_EXTENSIONS = {"png", "jpg", "jpeg", "webp"}
+SUPPORTED_EXTENSIONS = {"png", "jpg", "jpeg", "webp", "avif"}
 
 AVAILABLE_PROVIDERS = [
     CloudinaryStorageProvider.metadata,
@@ -91,7 +91,7 @@ def resolve_settings(db: Session) -> ResolvedSettings:
         if ext.strip().lower().lstrip(".") in SUPPORTED_EXTENSIONS
     ]
     if not parsed_exts:
-        parsed_exts = ["png", "jpg", "jpeg", "webp"]
+        parsed_exts = sorted(SUPPORTED_EXTENSIONS)
 
     try:
         max_mb = int(
@@ -177,7 +177,7 @@ def update_settings(db: Session, payload: AdminSettingsUpdate, admin_user: User)
         if ext.strip().lower().lstrip(".") in SUPPORTED_EXTENSIONS
     ]
     if not clean_exts:
-        clean_exts = ["png", "jpg", "jpeg", "webp"]
+        clean_exts = sorted(SUPPORTED_EXTENSIONS)
 
     # General settings
     _upsert_setting(db, rows, "general.site_name", payload.general.site_name.strip(), "general", admin_user.id)

@@ -52,7 +52,7 @@ class Settings(BaseSettings):
 
     # Upload security constraints
     UPLOAD_DIR: Path = default_upload_dir()
-    ALLOWED_EXTENSIONS: set[str] = {"png", "jpg", "jpeg", "webp"}
+    ALLOWED_EXTENSIONS: set[str] = {"png", "jpg", "jpeg", "webp", "avif"}
     MAX_FILE_SIZE: int = 5 * 1024 * 1024  # 5 MB
 
     CORS_ORIGINS: list[str] = [

@@ -76,6 +76,10 @@ class CloudinaryStorageProvider(StorageProvider):
             )
         return str(secure_url)
 
+    def delete(self, public_id: str, extension: str) -> None:
+        self._configure()
+        cloudinary.uploader.destroy(f"{self.folder}/{public_id}", resource_type="image", invalidate=True)
+
     def test_connection(self) -> tuple[bool, str]:
         if not self.is_configured:
             return False, "Missing Cloudinary credentials (cloud name, API key, and API secret)."

@@ -1,12 +1,17 @@
 import io
+from pathlib import Path
+from random import Random
 from unittest.mock import MagicMock
 import cloudinary.uploader
 import pytest
 from fastapi.testclient import TestClient
 from PIL import Image
+from sqlalchemy.orm import Session
 
 from app.config import normalize_database_url, settings
 from app.database import build_engine
+from app.models import WasteReport
+from app.services.storage.local_provider import LocalStorageProvider
 
 
 def make_test_png_bytes() -> bytes:
@@ -14,6 +19,106 @@ def make_test_png_bytes() -> bytes:
     img = Image.new("RGB", (64, 64), color=(34, 197, 94))
     img.save(buf, format="PNG")
     return buf.getvalue()
+
+
+def report_form(category_id: int) -> dict[str, str]:
+    return {
+        "title": "Waste beside the intersection",
+        "description": "Several bags of waste beside the pedestrian crossing.",
+        "category_id": str(category_id),
+        "location_text": "Intersection near Central Market",
+    }
+
+
+def test_multiple_photos_include_avif_and_preserve_the_cover(
+    client: TestClient, test_db: Session, seed_users_and_categories: dict,
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path,
+):
+    monkeypatch.setattr(settings, "STORAGE_BACKEND", "local")
+    monkeypatch.setattr(settings, "UPLOAD_DIR", tmp_path)
+    monkeypatch.setattr(settings, "ALLOWED_EXTENSIONS", {"png", "avif"})
+    resident = seed_users_and_categories["resident1_headers"]
+    category_id = seed_users_and_categories["cat_plastic"].id
+    avif = io.BytesIO()
+    Image.new("RGB", (12, 12), (20, 110, 40)).save(avif, format="AVIF")
+    png = make_test_png_bytes()
+
+    response = client.post(
+        "/api/reports", data=report_form(category_id), headers=resident,
+        files=[("photos", ("cover.avif", avif.getvalue(), "image/avif")), ("photos", ("details.png", png, "image/png"))],
+    )
+    assert response.status_code == 201
+    report = response.json()
+    cover, detail = report["photo_paths"]
+    assert report["photo_path"] == cover
+    assert cover.endswith(".avif") and detail.endswith(".png")
+    assert (tmp_path / Path(cover).name).read_bytes() == avif.getvalue()
+    assert (tmp_path / Path(detail).name).read_bytes() == png
+    assert client.get(f"/api/reports/{report['id']}", headers=resident).json()["photo_paths"] == [cover, detail]
+    assert client.get("/api/reports/my", headers=resident).json()[0]["photo_path"] == cover
+
+    legacy = WasteReport(
+        user_id=seed_users_and_categories["resident1"].id, category_id=category_id,
+        title="Older report", description="A report created before galleries.", location_text="A street",
+        photo_path="/uploads/legacy.png",
+    )
+    test_db.add(legacy)
+    test_db.commit()
+    assert client.get(f"/api/reports/{legacy.id}", headers=resident).json()["photo_paths"] == ["/uploads/legacy.png"]
+
+
+def test_batch_validation_and_failed_storage_leave_no_report_or_files(
+    client: TestClient, seed_users_and_categories: dict, monkeypatch: pytest.MonkeyPatch, tmp_path: Path,
+):
+    uploads = tmp_path / "images"
+    uploads.mkdir()
+    monkeypatch.setattr(settings, "STORAGE_BACKEND", "local")
+    monkeypatch.setattr(settings, "UPLOAD_DIR", uploads)
+    resident = seed_users_and_categories["resident1_headers"]
+    data = report_form(seed_users_and_categories["cat_plastic"].id)
+    png = make_test_png_bytes()
+    valid = ("photos", ("photo.png", png, "image/png"))
+    for files in ([valid] * 6, [valid, ("photos", ("broken.avif", b"bad image", "image/avif"))]):
+        assert client.post("/api/reports", data=data, files=files, headers=resident).status_code == 400
+        assert not list(uploads.iterdir())
+
+    save_image = LocalStorageProvider.upload
+    attempts = 0
+
+    def fail_second_upload(provider, contents, public_id, extension, content_type):
+        nonlocal attempts
+        attempts += 1
+        path = save_image(provider, contents, public_id, extension, content_type)
+        if attempts == 2:
+            raise OSError("Storage failed after writing")
+        return path
+
+    monkeypatch.setattr(LocalStorageProvider, "upload", fail_second_upload)
+    with pytest.raises(OSError, match="Storage failed"):
+        client.post("/api/reports", data=data, files=[valid, valid], headers=resident)
+    assert attempts == 2
+    assert not list(uploads.iterdir())
+    assert client.get("/api/reports/my", headers=resident).json() == []
+
+
+def test_vercel_policy_applies_a_combined_photo_limit(
+    client: TestClient, seed_users_and_categories: dict, monkeypatch: pytest.MonkeyPatch,
+):
+    monkeypatch.setenv("VERCEL", "1")
+    monkeypatch.setattr(settings, "MAX_FILE_SIZE", 5 * 1024 * 1024)
+    resident = seed_users_and_categories["resident1_headers"]
+    size = client.get("/api/reports/upload-policy", headers=resident).json()
+    assert size["max_file_size_mb"] == size["max_total_size_mb"] == 4
+
+    buffer = io.BytesIO()
+    Image.frombytes("RGB", (900, 900), Random(42).randbytes(900 * 900 * 3)).save(buffer, format="PNG")
+    photo = ("photos", ("photo.png", buffer.getvalue(), "image/png"))
+    response = client.post(
+        "/api/reports", data=report_form(seed_users_and_categories["cat_plastic"].id),
+        files=[photo, photo], headers=resident,
+    )
+    assert response.status_code == 400
+    assert response.json()["detail"] == "All photos together must be 4 MB or smaller."
 
 
 def test_postgres_url_normalization_and_engine_dialect():

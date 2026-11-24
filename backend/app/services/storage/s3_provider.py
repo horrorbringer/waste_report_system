@@ -96,9 +96,13 @@ class S3CompatibleStorageProvider(StorageProvider):
             )
         return boto3.client("s3", **kwargs)
 
+    def _object_key(self, public_id: str, extension: str) -> str:
+        filename = f"{public_id}.{extension}"
+        return f"{self.folder}/{filename}" if self.folder else filename
+
     def upload(self, contents: bytes, public_id: str, extension: str, content_type: str) -> str:
         client = self._build_client()
-        object_key = f"{self.folder}/{public_id}.{extension}" if self.folder else f"{public_id}.{extension}"
+        object_key = self._object_key(public_id, extension)
         try:
             # Set ACL='public-read' so Sabay Cloud, Ceph, MinIO, and S3 make uploaded photos publicly viewable
             try:
@@ -132,6 +136,9 @@ class S3CompatibleStorageProvider(StorageProvider):
         if self.endpoint_url:
             return f"{self.endpoint_url}/{self.bucket}/{object_key}"
         return f"https://{self.bucket}.s3.{self.region}.amazonaws.com/{object_key}"
+
+    def delete(self, public_id: str, extension: str) -> None:
+        self._build_client().delete_object(Bucket=self.bucket, Key=self._object_key(public_id, extension))
 
     def test_connection(self) -> tuple[bool, str]:
         if not self.is_configured:

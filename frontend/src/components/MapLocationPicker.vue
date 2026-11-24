@@ -21,6 +21,8 @@ import {
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
+import { districtFromAddress, provinceFromAddress } from '@/lib/cambodiaAreas'
+import type { ReportProvince } from '@/types'
 import {
   Dialog,
   DialogContent,
@@ -33,11 +35,12 @@ const props = defineProps<{
   open: boolean
   initialLat?: number | string | null
   initialLng?: number | string | null
+  reportAreas: ReportProvince[]
 }>()
 
 const emit = defineEmits<{
   (e: 'update:open', val: boolean): void
-  (e: 'select-location', payload: { lat: number; lng: number; address?: string }): void
+  (e: 'select-location', payload: { lat: number; lng: number; address?: string; district: number | null }): void
 }>()
 
 const { t } = useI18n()
@@ -54,8 +57,10 @@ const isMapLoading = ref(false)
 const selectedLat = ref<number>(11.5564)
 const selectedLng = ref<number>(104.9282)
 const detectedAddress = ref<string>('')
+const detectedDistrict = ref<number | null>(null)
 const resolvingAddress = ref<boolean>(false)
 const locating = ref<boolean>(false)
+let reverseRequest: AbortController | null = null
 
 // Place search state
 const searchQuery = ref('')
@@ -148,22 +153,35 @@ function setLayer(layerKey: MapLayerKey) {
 }
 
 async function reverseGeocode(lat: number, lng: number) {
+  reverseRequest?.abort()
+  const request = new AbortController()
+  reverseRequest = request
+  detectedAddress.value = ''
+  detectedDistrict.value = null
   resolvingAddress.value = true
   try {
     const res = await fetch(
       `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}`,
-      { headers: { 'User-Agent': 'EcoWatch-Community-App/1.0' } }
+      { headers: { 'User-Agent': 'EcoWatch-Community-App/1.0' }, signal: request.signal }
     )
-    if (res.ok) {
-      const data = await res.json()
-      if (data && data.display_name) {
-        detectedAddress.value = data.display_name
-      }
-    }
+    if (!res.ok) return
+    const data = await res.json()
+    if (reverseRequest !== request) return
+    detectedAddress.value = typeof data?.display_name === 'string' ? data.display_name : ''
+    const address = data?.address
+    const districtFields = [address?.city_district, address?.district, address?.borough,
+      address?.county, address?.state_district, address?.suburb]
+      .filter((part): part is string => typeof part === 'string')
+    const province = provinceFromAddress(detectedAddress.value, props.reportAreas)
+    detectedDistrict.value = districtFromAddress(districtFields.join(', '), props.reportAreas, province)
+      ?? districtFromAddress(detectedAddress.value, props.reportAreas, province)
   } catch {
     // Gracefully ignore network timeout
   } finally {
-    resolvingAddress.value = false
+    if (reverseRequest === request) {
+      reverseRequest = null
+      resolvingAddress.value = false
+    }
   }
 }
 
@@ -205,7 +223,9 @@ async function searchLocation() {
         const lat = parseFloat(best.lat)
         const lng = parseFloat(best.lon)
         updateMarkerPosition(lat, lng)
-        detectedAddress.value = best.display_name
+        detectedAddress.value = typeof best.display_name === 'string' ? best.display_name : ''
+        const province = provinceFromAddress(detectedAddress.value, props.reportAreas)
+        detectedDistrict.value = districtFromAddress(detectedAddress.value, props.reportAreas, province)
         map?.flyTo([lat, lng], 17, { duration: 1.0 })
       } else {
         searchError.value = 'Location not found. Try another landmark name.'
@@ -307,6 +327,7 @@ function confirmSelection() {
     lat: selectedLat.value,
     lng: selectedLng.value,
     address: detectedAddress.value || undefined,
+    district: detectedDistrict.value,
   })
   emit('update:open', false)
 }
@@ -317,10 +338,13 @@ watch(
     if (isOpen) {
       searchQuery.value = ''
       searchError.value = ''
+      detectedAddress.value = ''
+      detectedDistrict.value = null
       nextTick(() => {
         mountMapWhenReady(0)
       })
     } else {
+      reverseRequest?.abort()
       if (map) {
         map.remove()
         map = null
@@ -332,6 +356,7 @@ watch(
 )
 
 onBeforeUnmount(() => {
+  reverseRequest?.abort()
   if (map) {
     map.remove()
     map = null

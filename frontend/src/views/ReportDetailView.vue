@@ -8,6 +8,8 @@ import {
   Calendar,
   Check,
   CheckCircle2,
+  ChevronLeft,
+  ChevronRight,
   Clock,
   Compass,
   Copy,
@@ -29,6 +31,7 @@ import {
 } from 'lucide-vue-next'
 import AppLayout from '@/layouts/AppLayout.vue'
 import StatusBadge from '@/components/StatusBadge.vue'
+import ReportPublicationDialog from '@/components/ReportPublicationDialog.vue'
 import { useAuthStore } from '@/stores/auth'
 import { useReportStore } from '@/stores/reports'
 import { formatDate, resolvePhotoUrl } from '@/lib/utils'
@@ -70,6 +73,7 @@ const statusNote = ref('')
 const savingStatus = ref(false)
 const statusSuccess = ref('')
 const zoomModalOpen = ref(false)
+const activePhotoIndex = ref(0)
 const copied = ref(false)
 
 const notePresets = [
@@ -96,6 +100,13 @@ const report = computed(() => {
   const current = reportStore.currentReport
   return current?.id === Number(route.params.id) ? current : null
 })
+
+const photoPaths = computed(() => {
+  if (report.value?.photo_paths?.length) return report.value.photo_paths
+  return report.value?.photo_path ? [report.value.photo_path] : []
+})
+const selectedPhotoUrl = computed(() => resolvePhotoUrl(photoPaths.value[activePhotoIndex.value]))
+const selectedPhotoAlt = computed(() => t('detail.galleryPhotoAlt', { title: report.value?.title, index: activePhotoIndex.value + 1 }))
 
 const hasGps = computed(() => {
   return report.value?.latitude !== null && report.value?.longitude !== null
@@ -191,6 +202,15 @@ async function handleStatusSave() {
           </Button>
 
           <!-- Admin Quick Status Trigger -->
+          <ReportPublicationDialog
+            v-if="auth.isAdmin && report"
+            :report-id="report.id"
+            :location-text="report.location_text"
+            :location-district="report.location_district"
+            :published-district="report.public_district"
+            :published-province="report.public_province"
+          />
+
           <Button
             v-if="auth.isAdmin && report"
             size="sm"
@@ -466,11 +486,11 @@ async function handleStatusSave() {
             <!-- 2. Attached Photo Evidence Card -->
             <Card class="border-border/60 shadow-sm">
               <CardHeader class="pb-2">
-                <div class="flex items-center justify-between">
+                <div class="flex flex-wrap items-center justify-between gap-2">
                   <CardTitle class="text-base font-semibold">
-                    {{ t('detail.attachedPhoto') }}
+                    {{ t('detail.attachedPhotos') }}
                   </CardTitle>
-                  <div v-if="report.photo_path" class="flex items-center gap-2">
+                  <div v-if="selectedPhotoUrl" class="flex flex-wrap items-center gap-2">
                     <!-- Zoom Button -->
                     <Button
                       variant="outline"
@@ -483,7 +503,7 @@ async function handleStatusSave() {
                     </Button>
                     <!-- Open in New Tab -->
                     <a
-                      :href="resolvePhotoUrl(report.photo_path)"
+                      :href="selectedPhotoUrl"
                       target="_blank"
                       rel="noopener noreferrer"
                       class="inline-flex h-7 items-center gap-1 rounded-md border bg-background px-2.5 text-xs font-medium text-primary shadow-none hover:underline"
@@ -496,17 +516,28 @@ async function handleStatusSave() {
               </CardHeader>
               <CardContent>
                 <!-- Photo Container -->
-                <div
-                  v-if="report.photo_path"
-                  class="group relative flex max-h-[500px] items-center justify-center overflow-hidden rounded-xl border bg-black/5 dark:bg-black/20 p-2"
-                >
-                  <img
-                    :src="resolvePhotoUrl(report.photo_path)"
-                    :alt="report.title"
-                    class="max-h-[480px] w-auto rounded-lg object-contain shadow-sm cursor-zoom-in transition duration-300 group-hover:scale-[1.01]"
-                    loading="lazy"
+                <div v-if="selectedPhotoUrl" class="space-y-3">
+                  <button
+                    type="button"
+                    class="flex w-full cursor-zoom-in items-center justify-center overflow-hidden rounded-xl border bg-black/5 p-2 dark:bg-black/20"
+                    :aria-label="t('detail.viewFullscreen')"
                     @click="zoomModalOpen = true"
-                  />
+                  >
+                    <img :src="selectedPhotoUrl" :alt="selectedPhotoAlt" class="max-h-[480px] max-w-full rounded-lg object-contain" loading="lazy" />
+                  </button>
+                  <div v-if="photoPaths.length > 1" class="flex flex-wrap items-center gap-2" role="group" :aria-label="t('detail.attachedPhotos')">
+                    <button
+                      v-for="(path, index) in photoPaths"
+                      :key="path"
+                      type="button"
+                      class="h-14 w-16 overflow-hidden rounded-lg border-2 bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring aria-pressed:border-primary"
+                      :aria-label="t('detail.showGalleryPhoto', { index: index + 1 })"
+                      :aria-pressed="index === activePhotoIndex"
+                      @click="activePhotoIndex = index"
+                    >
+                      <img :src="resolvePhotoUrl(path)" alt="" class="h-full w-full object-cover" loading="lazy" />
+                    </button>
+                  </div>
                 </div>
 
                 <!-- Empty Photo State -->
@@ -723,12 +754,21 @@ async function handleStatusSave() {
               {{ report?.location_text }}
             </DialogDescription>
           </DialogHeader>
-          <div v-if="report?.photo_path" class="flex max-h-[75vh] items-center justify-center overflow-hidden rounded-lg bg-muted/20 p-2">
+          <div v-if="selectedPhotoUrl" class="flex max-h-[70vh] items-center justify-center overflow-hidden rounded-lg bg-muted/20 p-2">
             <img
-              :src="resolvePhotoUrl(report.photo_path)"
-              :alt="report?.title"
-              class="max-h-[70vh] w-auto rounded object-contain shadow-sm"
+              :src="selectedPhotoUrl"
+              :alt="selectedPhotoAlt"
+              class="max-h-[65vh] max-w-full rounded object-contain shadow-sm"
             />
+          </div>
+          <div v-if="photoPaths.length > 1" class="flex items-center justify-between gap-3">
+            <Button type="button" variant="outline" size="icon" :disabled="activePhotoIndex === 0" :aria-label="t('detail.previousPhoto')" @click="activePhotoIndex--">
+              <ChevronLeft class="h-4 w-4" />
+            </Button>
+            <p class="text-sm text-muted-foreground" aria-live="polite">{{ t('detail.photoPosition', { index: activePhotoIndex + 1, count: photoPaths.length }) }}</p>
+            <Button type="button" variant="outline" size="icon" :disabled="activePhotoIndex === photoPaths.length - 1" :aria-label="t('detail.nextPhoto')" @click="activePhotoIndex++">
+              <ChevronRight class="h-4 w-4" />
+            </Button>
           </div>
         </DialogContent>
       </Dialog>
