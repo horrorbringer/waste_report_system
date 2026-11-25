@@ -16,6 +16,7 @@ import {
   Download,
   Edit3,
   ExternalLink,
+  FileText,
   History,
   ImageIcon,
   Info,
@@ -32,6 +33,7 @@ import {
 import AppLayout from '@/layouts/AppLayout.vue'
 import StatusBadge from '@/components/StatusBadge.vue'
 import ReportPublicationDialog from '@/components/ReportPublicationDialog.vue'
+import ReportMiniMap from '@/components/ReportMiniMap.vue'
 import { useAuthStore } from '@/stores/auth'
 import { useReportStore } from '@/stores/reports'
 import { formatDate, resolvePhotoUrl } from '@/lib/utils'
@@ -75,6 +77,7 @@ const statusSuccess = ref('')
 const zoomModalOpen = ref(false)
 const activePhotoIndex = ref(0)
 const copied = ref(false)
+const coordsCopied = ref(false)
 
 const notePresets = [
   'presetNote1',
@@ -143,6 +146,15 @@ function copyReportLink() {
   setTimeout(() => {
     copied.value = false
   }, 2500)
+}
+
+function copyCoordinates() {
+  if (!hasGps.value || !report.value) return
+  navigator.clipboard.writeText(`${report.value.latitude}, ${report.value.longitude}`)
+  coordsCopied.value = true
+  setTimeout(() => {
+    coordsCopied.value = false
+  }, 2000)
 }
 
 function openStatusDialog() {
@@ -414,7 +426,7 @@ async function handleStatusSave() {
                     <Check class="h-3.5 w-3.5 stroke-[3]" />
                   </div>
                   <p class="font-medium text-foreground">{{ t('detail.stepSubmitted') }}</p>
-                  <p class="text-[11px] text-muted-foreground">Report logged</p>
+                  <p class="text-[11px] text-muted-foreground">{{ t('detail.stepLoggedSub') }}</p>
                 </div>
 
                 <!-- Step 2: In Progress -->
@@ -432,7 +444,7 @@ async function handleStatusSave() {
                     <span v-else>2</span>
                   </div>
                   <p class="font-medium text-foreground">{{ t('detail.stepUnderway') }}</p>
-                  <p class="text-[11px] text-muted-foreground">Triage & cleanup</p>
+                  <p class="text-[11px] text-muted-foreground">{{ t('detail.stepUnderwaySub') }}</p>
                 </div>
 
                 <!-- Step 3: Resolved -->
@@ -448,7 +460,7 @@ async function handleStatusSave() {
                     <CheckCircle2 class="h-3.5 w-3.5" />
                   </div>
                   <p class="font-medium text-foreground">{{ t('detail.stepResolved') }}</p>
-                  <p class="text-[11px] text-muted-foreground">Verified clear</p>
+                  <p class="text-[11px] text-muted-foreground">{{ t('detail.stepResolvedSub') }}</p>
                 </div>
               </div>
 
@@ -557,7 +569,7 @@ async function handleStatusSave() {
             <!-- 3. Location & Navigation Card -->
             <Card class="border-border/60 shadow-sm">
               <CardHeader class="pb-2">
-                <div class="flex items-center justify-between">
+                <div class="flex flex-wrap items-center justify-between gap-2">
                   <div class="flex items-center gap-2">
                     <MapPin class="h-4 w-4 text-primary" />
                     <CardTitle class="text-base font-semibold">
@@ -566,7 +578,18 @@ async function handleStatusSave() {
                   </div>
 
                   <!-- Google Maps Action Shortcuts -->
-                  <div v-if="hasGps" class="flex items-center gap-2">
+                  <div v-if="hasGps" class="flex flex-wrap items-center gap-2">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      class="h-7 gap-1 px-2.5 text-xs shadow-none"
+                      @click="copyCoordinates"
+                    >
+                      <Check v-if="coordsCopied" class="h-3 w-3 text-emerald-600 stroke-[3]" />
+                      <Copy v-else class="h-3 w-3 text-primary" />
+                      {{ coordsCopied ? t('detail.coordsCopied') : t('detail.copyCoords') }}
+                    </Button>
                     <a
                       :href="mapsUrl"
                       target="_blank"
@@ -588,7 +611,7 @@ async function handleStatusSave() {
                   </div>
                 </div>
               </CardHeader>
-              <CardContent class="space-y-3">
+              <CardContent class="space-y-4">
                 <div class="rounded-xl border bg-muted/20 p-4">
                   <p class="text-sm font-medium leading-relaxed text-foreground">
                     {{ report.location_text }}
@@ -597,23 +620,81 @@ async function handleStatusSave() {
                   <!-- GPS Coordinates Badge -->
                   <div
                     v-if="hasGps"
-                    class="mt-3 flex flex-wrap items-center gap-2 border-t border-border/50 pt-2.5"
+                    class="mt-3 flex flex-wrap items-center justify-between gap-2 border-t border-border/50 pt-2.5"
                   >
                     <Badge variant="outline" class="font-mono text-[11px] tabular-nums">
                       <Compass class="mr-1 h-3 w-3 text-primary" />
                       GPS: {{ report.latitude }}, {{ report.longitude }}
                     </Badge>
                     <span class="text-[11px] text-muted-foreground">
-                      Coordinates verified for sanitation truck navigation
+                      Coordinates verified for municipal response
                     </span>
                   </div>
                 </div>
+
+                <!-- Interactive Mini Leaflet Map Preview -->
+                <ReportMiniMap
+                  v-if="hasGps"
+                  :latitude="Number(report.latitude)"
+                  :longitude="Number(report.longitude)"
+                  :title="report.title"
+                />
               </CardContent>
             </Card>
           </div>
 
-          <!-- Right Column (4 cols): Transparent Audit Status Timeline -->
+          <!-- Right Column (4 cols): Incident Overview & Status Timeline -->
           <div class="space-y-6 lg:col-span-4">
+            <!-- Incident Quick Summary Card -->
+            <Card class="border-border/60 shadow-sm">
+              <CardHeader class="pb-3">
+                <div class="flex items-center justify-between">
+                  <div class="flex items-center gap-2">
+                    <FileText class="h-4 w-4 text-primary" />
+                    <CardTitle class="text-sm font-semibold">
+                      {{ t('detail.summaryTitle') }}
+                    </CardTitle>
+                  </div>
+                  <Badge variant="outline" class="font-mono text-xs tabular-nums text-muted-foreground">
+                    #{{ report.id }}
+                  </Badge>
+                </div>
+              </CardHeader>
+              <CardContent class="space-y-3 text-xs">
+                <div class="flex items-center justify-between border-b pb-2">
+                  <span class="text-muted-foreground">{{ t('detail.categoryLabel') }}</span>
+                  <Badge variant="secondary" class="font-medium">
+                    {{ localizedCategory(report.category_name, report.category_name_km, locale) }}
+                  </Badge>
+                </div>
+                <div class="flex items-center justify-between border-b pb-2">
+                  <span class="text-muted-foreground">{{ t('detail.reporterLabel') }}</span>
+                  <span class="font-medium text-foreground">{{ report.reporter_name }}</span>
+                </div>
+                <div class="flex items-center justify-between border-b pb-2">
+                  <span class="text-muted-foreground">{{ t('detail.submittedLabel') }}</span>
+                  <span class="tabular-nums text-foreground">{{ formatDate(report.created_at, locale) }}</span>
+                </div>
+                <div v-if="hasGps" class="flex items-center justify-between border-b pb-2">
+                  <span class="text-muted-foreground">GPS</span>
+                  <span class="font-mono tabular-nums text-foreground">{{ Number(report.latitude).toFixed(4) }}, {{ Number(report.longitude).toFixed(4) }}</span>
+                </div>
+                <!-- Share Link Button -->
+                <div class="pt-1">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    class="w-full gap-2 text-xs font-medium"
+                    @click="copyReportLink"
+                  >
+                    <Check v-if="copied" class="h-3.5 w-3.5 text-emerald-600 stroke-[3]" />
+                    <Share2 v-else class="h-3.5 w-3.5 text-primary" />
+                    {{ copied ? t('detail.linkCopied') : t('detail.copyLink') }}
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+
             <Card class="border-border/60 shadow-sm">
               <CardHeader class="pb-3">
                 <div class="flex items-center gap-2">

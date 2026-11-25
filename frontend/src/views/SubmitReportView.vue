@@ -2,7 +2,33 @@
 import { computed, nextTick, onMounted, onUnmounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
-import { AlertCircle, ArrowLeft, Camera, CheckCircle2, Circle, ClipboardList, ImagePlus, Loader2, Lock, MapPin, Navigation, Upload, X } from 'lucide-vue-next'
+import {
+  AlertCircle,
+  AlertTriangle,
+  ArrowLeft,
+  Camera,
+  Check,
+  CheckCircle2,
+  Circle,
+  ClipboardList,
+  Compass,
+  Cpu,
+  ExternalLink,
+  HardHat,
+  ImagePlus,
+  Info,
+  Leaf,
+  Loader2,
+  Lock,
+  MapPin,
+  Navigation,
+  Package,
+  Sparkles,
+  Tag,
+  Trash2,
+  Upload,
+  X,
+} from 'lucide-vue-next'
 import AppLayout from '@/layouts/AppLayout.vue'
 import MapLocationPicker from '@/components/MapLocationPicker.vue'
 import { useCategoryStore } from '@/stores/categories'
@@ -11,6 +37,7 @@ import { localizedCategory } from '@/i18n'
 import { suggestReportArea } from '@/lib/cambodiaAreas'
 import type { ReportUploadPolicy } from '@/types'
 import { Button } from '@/components/ui/button'
+import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { Label } from '@/components/ui/label'
@@ -89,9 +116,24 @@ const fieldErrors = computed(() => ({
   lng: coordinates.value.lng && Math.abs(Number(coordinates.value.lng)) > 180 ? t('submitReport.errLongitude') : '',
 }))
 
+function getCategoryIcon(name: string) {
+  const lower = name.toLowerCase()
+  if (lower.includes('plastic')) return Package
+  if (lower.includes('organic') || lower.includes('food') || lower.includes('garden')) return Leaf
+  if (lower.includes('overflow') || lower.includes('bin') || lower.includes('dumpster')) return Trash2
+  if (lower.includes('construction') || lower.includes('debris') || lower.includes('rubble')) return HardHat
+  if (lower.includes('electronic') || lower.includes('e-waste')) return Cpu
+  if (lower.includes('hazard') || lower.includes('chemical') || lower.includes('toxic')) return AlertTriangle
+  return Tag
+}
+
 const checklist = computed(() => [
-  { label: 'submitReport.detailsSection', complete: !fieldErrors.value.category && !fieldErrors.value.title && !fieldErrors.value.description },
-  { label: 'submitReport.locationSection', complete: !fieldErrors.value.location && !fieldErrors.value.lat && !fieldErrors.value.lng },
+  { label: 'submitReport.fieldCategory', complete: Boolean(categoryId.value), optional: false },
+  { label: 'submitReport.fieldTitle', complete: title.value.trim().length >= 3, optional: false },
+  { label: 'submitReport.fieldDesc', complete: description.value.trim().length >= 10, optional: false },
+  { label: 'submitReport.fieldLocation', complete: locationText.value.trim().length >= 3, optional: false },
+  { label: 'submitReport.gpsCoordinates', complete: Boolean(coordinates.value.lat && coordinates.value.lng), optional: true },
+  { label: 'submitReport.photoLabel', complete: photos.value.length > 0, optional: true },
 ])
 
 onMounted(() => {
@@ -308,6 +350,7 @@ async function handleSubmit() {
 
       <div class="grid items-start gap-5 lg:grid-cols-[minmax(0,1fr)_17rem] lg:gap-6">
         <form novalidate class="min-w-0 space-y-5" :aria-busy="submitting" @submit.prevent="handleSubmit">
+          <!-- SECTION 1: Report Details (Category, Title, Description) -->
           <section aria-labelledby="report-details-title" class="space-y-5 rounded-2xl border bg-card p-4 shadow-sm sm:p-6">
             <div class="flex items-start justify-between gap-3">
               <div class="flex min-w-0 items-center gap-2.5">
@@ -316,175 +359,360 @@ async function handleSubmit() {
               </div>
               <p class="text-right text-xs text-muted-foreground">{{ t('submitReport.requiredFields') }}</p>
             </div>
-            <div class="space-y-1.5">
-              <Label for="category">{{ t('submitReport.fieldCategory') }}</Label>
+
+            <!-- Waste Category Selection Grid -->
+            <div class="space-y-2">
+              <div class="flex items-center justify-between">
+                <Label for="category" class="text-sm font-semibold">{{ t('submitReport.fieldCategory') }}</Label>
+                <span v-if="selectedCategory" class="text-xs font-medium text-primary">
+                  {{ localizedCategory(selectedCategory.name, selectedCategory.name_km, locale) }}
+                </span>
+              </div>
+
+              <!-- Visual Category Tiles Grid -->
+              <div
+                class="grid grid-cols-2 gap-2.5 sm:grid-cols-3"
+                role="radiogroup"
+                :aria-label="t('submitReport.fieldCategory')"
+              >
+                <button
+                  v-for="category in categoryStore.categories"
+                  :key="category.id"
+                  type="button"
+                  role="radio"
+                  :aria-checked="categoryId === String(category.id)"
+                  class="group relative flex flex-col items-start rounded-xl border p-3 text-left transition-all hover:border-primary/60 hover:bg-muted/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                  :class="[
+                    categoryId === String(category.id)
+                      ? 'border-primary bg-primary/5 ring-1 ring-primary shadow-xs'
+                      : 'border-border/80 bg-card hover:shadow-xs',
+                  ]"
+                  @click="categoryId = String(category.id)"
+                >
+                  <div class="flex w-full items-center justify-between gap-1">
+                    <span
+                      class="flex h-8 w-8 items-center justify-center rounded-lg transition-colors"
+                      :class="[
+                        categoryId === String(category.id)
+                          ? 'bg-primary text-primary-foreground'
+                          : 'bg-muted text-muted-foreground group-hover:text-primary',
+                      ]"
+                    >
+                      <component :is="getCategoryIcon(category.name)" class="h-4 w-4" />
+                    </span>
+                    <span
+                      v-if="categoryId === String(category.id)"
+                      class="flex h-5 w-5 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-xs"
+                    >
+                      <Check class="h-3 w-3 stroke-[3]" />
+                    </span>
+                  </div>
+
+                  <span class="mt-2 text-xs font-semibold leading-snug text-foreground">
+                    {{ localizedCategory(category.name, category.name_km, locale) }}
+                  </span>
+
+                  <span
+                    v-if="category.description"
+                    class="mt-1 line-clamp-2 text-[11px] leading-tight text-muted-foreground"
+                  >
+                    {{ locale === 'km' && category.description_km ? category.description_km : category.description }}
+                  </span>
+                </button>
+              </div>
+
+              <!-- Accessible fallback select element -->
               <select
                 id="category"
                 v-model="categoryId"
-                required
-                :aria-invalid="attempted && !!fieldErrors.category || undefined"
-                :aria-describedby="attempted && fieldErrors.category ? 'category-error' : selectedCategoryDescription ? 'category-help' : undefined"
-                class="block h-10 w-full rounded-md border border-input bg-background px-3 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring aria-[invalid=true]:border-destructive"
+                class="sr-only"
+                tabindex="-1"
+                aria-hidden="true"
               >
                 <option value="" disabled>{{ t('submitReport.fieldCategoryPlaceholder') }}</option>
                 <option v-for="category in categoryStore.categories" :key="category.id" :value="String(category.id)">
                   {{ localizedCategory(category.name, category.name_km, locale) }}
                 </option>
               </select>
-              <p v-if="attempted && fieldErrors.category" id="category-error" class="text-sm text-destructive">{{ fieldErrors.category }}</p>
-              <p v-else-if="selectedCategoryDescription" id="category-help" class="text-sm text-muted-foreground">{{ selectedCategoryDescription }}</p>
-            </div>
 
-            <div class="space-y-1.5">
-              <Label for="title">{{ t('submitReport.fieldTitle') }}</Label>
-              <Input id="title" v-model="title" required maxlength="200" class="h-10 aria-[invalid=true]:border-destructive"
-                :placeholder="t('submitReport.fieldTitlePlaceholder')"
-                :aria-invalid="attempted && !!fieldErrors.title || undefined"
-                :aria-describedby="attempted && fieldErrors.title ? 'title-error' : undefined" />
-              <p v-if="attempted && fieldErrors.title" id="title-error" class="text-sm text-destructive">{{ fieldErrors.title }}</p>
-              <details class="text-sm">
-                <summary class="w-fit cursor-pointer rounded-sm py-1 text-muted-foreground">{{ t('submitReport.quickTitlesLabel') }}</summary>
-                <div class="mt-1 flex flex-wrap gap-2">
-                  <Button v-for="key in quickTitles" :key="key" type="button" variant="outline" size="sm" class="h-auto whitespace-normal text-start" @click="title = t('submitReport.' + key)">
-                    {{ t('submitReport.' + key) }}
-                  </Button>
-                </div>
-              </details>
-            </div>
-
-            <div class="space-y-1.5">
-              <Label for="description">{{ t('submitReport.fieldDesc') }}</Label>
-              <Textarea id="description" v-model="description" required maxlength="2000" rows="4"
-                class="aria-[invalid=true]:border-destructive"
-                :placeholder="t('submitReport.fieldDescPlaceholder')"
-                :aria-invalid="attempted && !!fieldErrors.description || undefined"
-                :aria-describedby="attempted && fieldErrors.description ? 'description-error' : undefined" />
-              <p v-if="attempted && fieldErrors.description" id="description-error" class="text-sm text-destructive">{{ fieldErrors.description }}</p>
-            </div>
-          </section>
-
-          <section aria-labelledby="report-location-title" class="space-y-3 rounded-2xl border bg-card p-4 shadow-sm sm:space-y-4 sm:p-6">
-            <div class="flex items-center gap-2.5">
-              <MapPin class="h-4 w-4 shrink-0 text-primary" />
-              <h2 id="report-location-title" class="text-base font-semibold">{{ t('submitReport.locationSection') }}</h2>
-            </div>
-            <div class="space-y-1.5">
-              <Label for="location">{{ t('submitReport.fieldLocation') }}</Label>
-              <Input id="location" v-model="locationText" required maxlength="300" class="h-10 aria-[invalid=true]:border-destructive"
-                :placeholder="t('submitReport.fieldLocationPlaceholder')"
-                :aria-invalid="attempted && !!fieldErrors.location || undefined"
-                :aria-describedby="attempted && fieldErrors.location ? 'location-error location-help' : 'location-help'" />
-              <p v-if="attempted && fieldErrors.location" id="location-error" class="text-sm text-destructive">{{ fieldErrors.location }}</p>
-              <p id="location-help" class="text-sm text-muted-foreground">{{ t('submitReport.locationHint') }}</p>
-              <p v-if="districtSuggestion" class="text-sm text-muted-foreground">
-                {{ t('community.detectedDistrict', { district: locale === 'km' ? districtSuggestion.name_km : districtSuggestion.name }) }}
+              <p v-if="attempted && fieldErrors.category" id="category-error" class="text-xs font-medium text-destructive">
+                {{ fieldErrors.category }}
               </p>
             </div>
 
-            <div class="flex flex-wrap gap-2">
-              <Button type="button" variant="outline" class="min-h-10 gap-2" @click="mapPickerOpen = true">
-                <MapPin class="h-4 w-4" />
+            <!-- Report Title with Quick Chips -->
+            <div class="space-y-2">
+              <div class="flex items-center justify-between">
+                <Label for="title" class="text-sm font-semibold">{{ t('submitReport.fieldTitle') }}</Label>
+                <span class="text-[11px] text-muted-foreground tabular-nums">{{ title.length }} / 200</span>
+              </div>
+              <Input
+                id="title"
+                v-model="title"
+                required
+                maxlength="200"
+                class="h-10 aria-[invalid=true]:border-destructive"
+                :placeholder="t('submitReport.fieldTitlePlaceholder')"
+                :aria-invalid="attempted && !!fieldErrors.title || undefined"
+                :aria-describedby="attempted && fieldErrors.title ? 'title-error' : undefined"
+              />
+              <p v-if="attempted && fieldErrors.title" id="title-error" class="text-xs font-medium text-destructive">
+                {{ fieldErrors.title }}
+              </p>
+
+              <!-- Quick Title Suggestions Pills -->
+              <div class="flex flex-wrap items-center gap-1.5 pt-0.5">
+                <span class="inline-flex items-center gap-1 text-[11px] font-medium text-muted-foreground">
+                  <Sparkles class="h-3 w-3 text-primary" />
+                  {{ t('submitReport.quickTitlesLabel') }}:
+                </span>
+                <button
+                  v-for="key in quickTitles"
+                  :key="key"
+                  type="button"
+                  class="rounded-full border border-border/80 bg-muted/40 px-2.5 py-0.5 text-[11px] text-muted-foreground transition hover:border-primary hover:bg-primary/10 hover:text-foreground"
+                  @click="title = t('submitReport.' + key)"
+                >
+                  {{ t('submitReport.' + key) }}
+                </button>
+              </div>
+            </div>
+
+            <!-- Report Description -->
+            <div class="space-y-1.5">
+              <div class="flex items-center justify-between">
+                <Label for="description" class="text-sm font-semibold">{{ t('submitReport.fieldDesc') }}</Label>
+                <span class="text-[11px] text-muted-foreground tabular-nums">{{ description.length }} / 2000</span>
+              </div>
+              <Textarea
+                id="description"
+                v-model="description"
+                required
+                maxlength="2000"
+                rows="4"
+                class="aria-[invalid=true]:border-destructive"
+                :placeholder="t('submitReport.fieldDescPlaceholder')"
+                :aria-invalid="attempted && !!fieldErrors.description || undefined"
+                :aria-describedby="attempted && fieldErrors.description ? 'description-error' : undefined"
+              />
+              <p v-if="attempted && fieldErrors.description" id="description-error" class="text-xs font-medium text-destructive">
+                {{ fieldErrors.description }}
+              </p>
+            </div>
+          </section>
+
+          <!-- SECTION 2: Location & GPS Coordinates -->
+          <section aria-labelledby="report-location-title" class="space-y-4 rounded-2xl border bg-card p-4 shadow-sm sm:p-6">
+            <div class="flex items-center justify-between">
+              <div class="flex items-center gap-2.5">
+                <MapPin class="h-4 w-4 shrink-0 text-primary" />
+                <h2 id="report-location-title" class="text-base font-semibold">{{ t('submitReport.locationSection') }}</h2>
+              </div>
+              <Badge v-if="coordinates.lat && coordinates.lng" variant="outline" class="gap-1 font-mono text-[11px] text-emerald-600 border-emerald-300 dark:text-emerald-400">
+                <Check class="h-3 w-3" />
+                GPS Pinned
+              </Badge>
+            </div>
+
+            <div class="space-y-1.5">
+              <Label for="location" class="text-sm font-semibold">{{ t('submitReport.fieldLocation') }}</Label>
+              <Input
+                id="location"
+                v-model="locationText"
+                required
+                maxlength="300"
+                class="h-10 aria-[invalid=true]:border-destructive"
+                :placeholder="t('submitReport.fieldLocationPlaceholder')"
+                :aria-invalid="attempted && !!fieldErrors.location || undefined"
+                :aria-describedby="attempted && fieldErrors.location ? 'location-error location-help' : 'location-help'"
+              />
+              <p v-if="attempted && fieldErrors.location" id="location-error" class="text-xs font-medium text-destructive">
+                {{ fieldErrors.location }}
+              </p>
+              <div class="flex flex-wrap items-center justify-between gap-1 pt-0.5 text-xs text-muted-foreground">
+                <p id="location-help">{{ t('submitReport.locationHint') }}</p>
+                <Badge v-if="districtSuggestion" variant="secondary" class="gap-1 text-[11px]">
+                  <Compass class="h-3 w-3 text-primary" />
+                  {{ t('community.detectedDistrict', { district: locale === 'km' ? districtSuggestion.name_km : districtSuggestion.name }) }}
+                </Badge>
+              </div>
+            </div>
+
+            <!-- Action Toolbar: Pick on Map & Use GPS -->
+            <div class="flex flex-wrap gap-2.5 pt-1">
+              <Button type="button" variant="outline" class="h-9 gap-2 text-xs font-medium" @click="mapPickerOpen = true">
+                <MapPin class="h-4 w-4 text-primary" />
                 {{ t('submitReport.pickOnMap') }}
               </Button>
-              <Button type="button" variant="outline" class="min-h-10 gap-2" :disabled="locating" @click="detectLocation">
-                <Loader2 v-if="locating" class="h-4 w-4 animate-spin" />
-                <Navigation v-else class="h-4 w-4" />
+              <Button type="button" variant="outline" class="h-9 gap-2 text-xs font-medium" :disabled="locating" @click="detectLocation">
+                <Loader2 v-if="locating" class="h-4 w-4 animate-spin text-primary" />
+                <Navigation v-else class="h-4 w-4 text-primary" />
                 {{ locating ? t('submitReport.locating') : t('submitReport.useGps') }}
               </Button>
             </div>
-            <p v-if="locationError" role="alert" class="text-sm text-destructive">{{ locationError }}</p>
-            <div v-if="coordinates.lat && coordinates.lng" class="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm">
-              <span class="text-primary">{{ t('submitReport.gpsSuccess') }}</span>
-              <span v-if="gpsAccuracy !== null" class="text-muted-foreground">{{ t('submitReport.gpsAccuracy', { meters: gpsAccuracy }) }}</span>
-              <a :href="'https://www.google.com/maps?q=' + coordinates.lat + ',' + coordinates.lng" target="_blank" rel="noopener noreferrer" class="underline">
-                {{ t('submitReport.viewMaps') }}
-              </a>
-              <button type="button" class="text-muted-foreground underline" @click="clearCoordinates">{{ t('submitReport.clearGps') }}</button>
+            <p v-if="locationError" role="alert" class="text-xs font-medium text-destructive">{{ locationError }}</p>
+
+            <!-- Attached GPS Status Card -->
+            <div
+              v-if="coordinates.lat && coordinates.lng"
+              class="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-emerald-500/20 bg-emerald-500/5 p-3 text-xs"
+            >
+              <div class="flex items-center gap-2">
+                <span class="flex h-6 w-6 items-center justify-center rounded-full bg-emerald-500/15 text-emerald-600 dark:text-emerald-400">
+                  <Check class="h-3.5 w-3.5 stroke-[3]" />
+                </span>
+                <div>
+                  <p class="font-medium text-foreground">
+                    {{ t('submitReport.gpsSuccess') }}
+                    <span v-if="gpsAccuracy !== null" class="ml-1 text-[11px] text-muted-foreground">
+                      ({{ t('submitReport.gpsAccuracy', { meters: gpsAccuracy }) }})
+                    </span>
+                  </p>
+                  <p class="font-mono text-[11px] text-muted-foreground tabular-nums">
+                    {{ Number(coordinates.lat).toFixed(6) }}, {{ Number(coordinates.lng).toFixed(6) }}
+                  </p>
+                </div>
+              </div>
+              <div class="flex items-center gap-2">
+                <a
+                  :href="'https://www.google.com/maps?q=' + coordinates.lat + ',' + coordinates.lng"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  class="inline-flex h-7 items-center gap-1 rounded-md border bg-background px-2.5 text-[11px] font-medium text-foreground hover:bg-accent"
+                >
+                  <ExternalLink class="h-3 w-3 text-primary" />
+                  {{ t('submitReport.viewMaps') }}
+                </a>
+                <button
+                  type="button"
+                  class="inline-flex h-7 items-center gap-1 rounded-md border border-destructive/20 bg-background px-2.5 text-[11px] font-medium text-destructive hover:bg-destructive/10"
+                  @click="clearCoordinates"
+                >
+                  <X class="h-3 w-3" />
+                  {{ t('submitReport.clearGps') }}
+                </button>
+              </div>
             </div>
 
-            <details ref="coordinateFields" class="text-sm">
-              <summary class="w-fit cursor-pointer rounded-sm py-1 text-muted-foreground">{{ t('submitReport.manualCoordinates') }}</summary>
-              <div class="mt-2 grid grid-cols-2 gap-3">
-                <div class="space-y-1.5">
-                  <Label for="lat">{{ t('submitReport.latitude') }}</Label>
-                  <Input id="lat" v-model="latitude" type="number" step="any" @input="clearCoordinateMetadata"
+            <!-- Expandable Manual Coordinates -->
+            <details ref="coordinateFields" class="text-xs">
+              <summary class="w-fit cursor-pointer rounded-sm py-1 font-medium text-muted-foreground hover:text-foreground">
+                {{ t('submitReport.manualCoordinates') }}
+              </summary>
+              <div class="mt-2 grid grid-cols-2 gap-3 rounded-lg border bg-muted/20 p-3">
+                <div class="space-y-1">
+                  <Label for="lat" class="text-xs">{{ t('submitReport.latitude') }}</Label>
+                  <Input
+                    id="lat"
+                    v-model="latitude"
+                    type="number"
+                    step="any"
+                    class="h-8 text-xs font-mono"
+                    @input="clearCoordinateMetadata"
                     :aria-invalid="attempted && !!fieldErrors.lat || undefined"
-                    :aria-describedby="attempted && fieldErrors.lat ? 'lat-error' : undefined" />
-                  <p v-if="attempted && fieldErrors.lat" id="lat-error" class="text-sm text-destructive">{{ fieldErrors.lat }}</p>
+                    :aria-describedby="attempted && fieldErrors.lat ? 'lat-error' : undefined"
+                  />
+                  <p v-if="attempted && fieldErrors.lat" id="lat-error" class="text-xs text-destructive">{{ fieldErrors.lat }}</p>
                 </div>
-                <div class="space-y-1.5">
-                  <Label for="lng">{{ t('submitReport.longitude') }}</Label>
-                  <Input id="lng" v-model="longitude" type="number" step="any" @input="clearCoordinateMetadata"
+                <div class="space-y-1">
+                  <Label for="lng" class="text-xs">{{ t('submitReport.longitude') }}</Label>
+                  <Input
+                    id="lng"
+                    v-model="longitude"
+                    type="number"
+                    step="any"
+                    class="h-8 text-xs font-mono"
+                    @input="clearCoordinateMetadata"
                     :aria-invalid="attempted && !!fieldErrors.lng || undefined"
-                    :aria-describedby="attempted && fieldErrors.lng ? 'lng-error' : undefined" />
-                  <p v-if="attempted && fieldErrors.lng" id="lng-error" class="text-sm text-destructive">{{ fieldErrors.lng }}</p>
+                    :aria-describedby="attempted && fieldErrors.lng ? 'lng-error' : undefined"
+                  />
+                  <p v-if="attempted && fieldErrors.lng" id="lng-error" class="text-xs text-destructive">{{ fieldErrors.lng }}</p>
                 </div>
               </div>
             </details>
           </section>
 
+          <!-- SECTION 3: Photo Evidence Upload -->
           <section id="report-photo" tabindex="-1" aria-labelledby="report-photo-title" class="space-y-4 rounded-2xl border bg-card p-4 shadow-sm sm:p-6">
             <div class="flex flex-wrap items-center justify-between gap-x-3 gap-y-1">
               <div class="flex items-center gap-2.5">
                 <Camera class="h-4 w-4 shrink-0 text-primary" />
                 <h2 id="report-photo-title" class="text-base font-semibold">{{ t('submitReport.photosSection') }}</h2>
               </div>
-              <p class="text-xs font-medium tabular-nums text-muted-foreground" aria-live="polite">
+              <Badge variant="outline" class="text-xs font-mono tabular-nums text-muted-foreground" aria-live="polite">
                 {{ t('submitReport.photoCount', { count: photos.length, max: maxPhotos }) }}
-              </p>
+              </Badge>
             </div>
 
+            <!-- Upload Drop Zone -->
             <div
-              class="flex flex-col items-center gap-2 rounded-xl border border-dashed px-4 py-5 text-center transition-colors sm:py-7"
-              :class="dragDepth > 0 ? 'border-primary bg-primary/10' : 'border-primary/35 bg-accent/35'"
+              class="flex flex-col items-center gap-2.5 rounded-xl border-2 border-dashed px-4 py-6 text-center transition-all sm:py-8"
+              :class="dragDepth > 0 ? 'border-primary bg-primary/10 shadow-inner' : 'border-border/80 bg-muted/20 hover:border-primary/50 hover:bg-muted/40'"
               @dragenter.prevent="handleDragEnter"
               @dragover.prevent
               @dragleave.prevent="dragDepth = Math.max(0, dragDepth - 1)"
               @drop.prevent="handleDrop"
             >
-              <span class="flex h-10 w-10 items-center justify-center rounded-lg border border-primary/15 bg-background text-primary">
+              <span class="flex h-11 w-11 items-center justify-center rounded-xl border border-primary/20 bg-background text-primary shadow-xs">
                 <ImagePlus class="h-5 w-5" />
               </span>
-              <p class="text-sm font-semibold">{{ t('submitReport.photoDropTitle') }}</p>
-              <div class="space-y-0.5 text-xs leading-relaxed text-muted-foreground">
+              <p class="text-sm font-semibold text-foreground">{{ t('submitReport.photoDropTitle') }}</p>
+              <div class="space-y-0.5 text-xs text-muted-foreground">
                 <p>{{ photoHint }}</p>
                 <p v-if="maxTotalPhotoSize">{{ t('submitReport.photoTotalHint', { size: maxTotalPhotoSize }) }}</p>
               </div>
-              <div class="mt-1 flex flex-wrap justify-center gap-2">
-                <Button type="button" variant="outline" class="min-h-10 gap-2 bg-background" :disabled="submitting || photos.length >= maxPhotos" @click="browseInput?.click()">
-                  <Upload class="h-4 w-4" /> {{ t('submitReport.browseFiles') }}
+              <div class="mt-2 flex flex-wrap justify-center gap-2">
+                <Button type="button" variant="outline" size="sm" class="gap-1.5 bg-background shadow-xs" :disabled="submitting || photos.length >= maxPhotos" @click="browseInput?.click()">
+                  <Upload class="h-3.5 w-3.5 text-primary" /> {{ t('submitReport.browseFiles') }}
                 </Button>
-                <Button type="button" variant="outline" class="min-h-10 gap-2 bg-background sm:hidden" :disabled="submitting || photos.length >= maxPhotos" @click="cameraInput?.click()">
-                  <Camera class="h-4 w-4" /> {{ t('submitReport.takePhoto') }}
+                <Button type="button" variant="outline" size="sm" class="gap-1.5 bg-background shadow-xs sm:hidden" :disabled="submitting || photos.length >= maxPhotos" @click="cameraInput?.click()">
+                  <Camera class="h-3.5 w-3.5 text-primary" /> {{ t('submitReport.takePhoto') }}
                 </Button>
                 <input ref="browseInput" type="file" :accept="acceptPhoto" multiple hidden @change="handleFileChange" />
                 <input ref="cameraInput" type="file" accept="image/*" capture="environment" hidden @change="handleFileChange" />
               </div>
             </div>
 
-            <p v-if="photoError" role="alert" class="text-sm text-destructive">{{ photoError }}</p>
+            <p v-if="photoError" role="alert" class="text-xs font-medium text-destructive">{{ photoError }}</p>
+
+            <!-- Photo Thumbnails List -->
             <ul v-if="photos.length" class="grid grid-cols-2 gap-3 sm:grid-cols-3">
-              <li v-for="(photo, index) in photos" :key="photo.preview" class="relative min-w-0 overflow-hidden rounded-xl border bg-muted/25">
-                <button type="button" class="block aspect-[4/3] w-full overflow-hidden bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary" :aria-label="t('submitReport.previewNamed', { name: photo.file.name })" @click="openPhotoPreview(photo)">
-                  <img :src="photo.preview" alt="" class="h-full w-full object-cover" />
+              <li v-for="(photo, index) in photos" :key="photo.preview" class="group relative min-w-0 overflow-hidden rounded-xl border bg-muted/30 shadow-xs">
+                <button
+                  type="button"
+                  class="block aspect-[4/3] w-full overflow-hidden bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary"
+                  :aria-label="t('submitReport.previewNamed', { name: photo.file.name })"
+                  @click="openPhotoPreview(photo)"
+                >
+                  <img :src="photo.preview" alt="" class="h-full w-full object-cover transition-transform duration-200 group-hover:scale-105" />
                 </button>
-                <span v-if="index === 0" class="pointer-events-none absolute left-2 top-2 rounded bg-background px-1.5 py-0.5 text-[11px] font-medium text-foreground shadow-sm">
+                <span v-if="index === 0" class="pointer-events-none absolute left-2 top-2 rounded-md bg-background/90 px-1.5 py-0.5 text-[10px] font-semibold text-foreground shadow-sm backdrop-blur-xs">
                   {{ t('submitReport.coverPhoto') }}
                 </span>
-                <Button type="button" variant="outline" class="absolute right-1.5 top-1.5 h-8 w-8 bg-background p-0" :disabled="submitting" :aria-label="t('submitReport.removeNamed', { name: photo.file.name })" @click="removePhoto(photo)">
-                  <X class="h-4 w-4" />
+                <Button
+                  type="button"
+                  variant="destructive"
+                  size="icon"
+                  class="absolute right-1.5 top-1.5 h-7 w-7 rounded-md opacity-80 shadow-sm hover:opacity-100"
+                  :disabled="submitting"
+                  :aria-label="t('submitReport.removeNamed', { name: photo.file.name })"
+                  @click="removePhoto(photo)"
+                >
+                  <X class="h-3.5 w-3.5" />
                 </Button>
-                <div class="flex min-w-0 flex-wrap justify-between gap-x-2 gap-y-0.5 px-2.5 py-2 text-xs">
-                  <span class="min-w-0 truncate font-medium" :title="photo.file.name">{{ photo.file.name }}</span>
+                <div class="flex min-w-0 items-center justify-between gap-1.5 border-t bg-card px-2.5 py-1.5 text-[11px]">
+                  <span class="min-w-0 truncate font-medium text-foreground" :title="photo.file.name">{{ photo.file.name }}</span>
                   <span class="shrink-0 text-muted-foreground">{{ formatPhotoSize(photo.file.size) }}</span>
                 </div>
               </li>
             </ul>
+
             <p class="text-xs leading-relaxed text-muted-foreground">
               {{ photos.length ? t('submitReport.photoTotalSelected', { size: formatPhotoSize(photoBytes) }) : t('submitReport.photoSafetyHint') }}
             </p>
           </section>
 
+          <!-- SECTION 4: Submission Actions -->
           <div class="space-y-3 rounded-2xl border bg-card p-4 sm:p-5">
             <Alert v-if="error" id="report-submit-error" tabindex="-1" variant="destructive">
               <AlertCircle class="h-4 w-4" />
@@ -502,20 +730,50 @@ async function handleSubmit() {
           </div>
         </form>
 
-        <aside class="hidden lg:sticky lg:top-24 lg:block">
+        <!-- Right Sticky Sidebar: Granular Checklist & Civic Guidelines -->
+        <aside class="hidden lg:sticky lg:top-24 lg:block lg:space-y-5">
+          <!-- Submission Progress Checklist -->
           <div class="space-y-4 rounded-2xl border bg-card p-5 shadow-sm">
-            <h2 class="text-sm font-semibold">{{ t('submitReport.checklistTitle') }}</h2>
-            <ul class="space-y-3 text-sm">
-              <li v-for="item in checklist" :key="item.label" class="flex items-center gap-2.5">
-                <CheckCircle2 v-if="item.complete" class="h-4 w-4 shrink-0 text-primary" />
-                <Circle v-else class="h-4 w-4 shrink-0 text-muted-foreground" />
-                <span :class="item.complete ? 'text-foreground' : 'text-muted-foreground'">{{ t(item.label) }}</span>
-                <span class="sr-only">{{ t(item.complete ? 'submitReport.sectionComplete' : 'submitReport.sectionIncomplete') }}</span>
+            <div class="flex items-center gap-2">
+              <CheckCircle2 class="h-4 w-4 text-primary" />
+              <h2 class="text-sm font-semibold">{{ t('submitReport.checklistTitle') }}</h2>
+            </div>
+            <ul class="space-y-2.5 text-xs">
+              <li v-for="item in checklist" :key="item.label" class="flex items-center justify-between gap-2">
+                <span class="flex items-center gap-2" :class="item.complete ? 'text-foreground font-medium' : 'text-muted-foreground'">
+                  <CheckCircle2 v-if="item.complete" class="h-4 w-4 shrink-0 text-emerald-600 dark:text-emerald-400 stroke-[2.5]" />
+                  <Circle v-else class="h-4 w-4 shrink-0 text-muted-foreground/60" />
+                  {{ t(item.label) }}
+                </span>
+                <span v-if="item.optional" class="text-[10px] text-muted-foreground">({{ t('common.optional') || 'Optional' }})</span>
               </li>
             </ul>
-            <p class="flex items-start gap-2 border-t pt-4 text-xs leading-relaxed text-muted-foreground">
-              <Lock class="mt-0.5 h-3.5 w-3.5 shrink-0 text-primary" /> {{ t('submitReport.privacyHint') }}
+            <p class="flex items-start gap-2 border-t pt-3.5 text-[11px] leading-relaxed text-muted-foreground">
+              <Lock class="mt-0.5 h-3.5 w-3.5 shrink-0 text-primary" />
+              {{ t('submitReport.privacyHint') }}
             </p>
+          </div>
+
+          <!-- Civic Reporting Guidance Card -->
+          <div class="space-y-3 rounded-2xl border bg-card p-5 shadow-sm text-xs">
+            <div class="flex items-center gap-2">
+              <Info class="h-4 w-4 text-primary" />
+              <h3 class="font-semibold text-foreground">{{ t('submitReport.tipsHeading') }}</h3>
+            </div>
+            <div class="space-y-2.5 text-[11px] leading-relaxed text-muted-foreground">
+              <div>
+                <p class="font-medium text-foreground">{{ t('submitReport.tipPhotoTitle') }}</p>
+                <p>{{ t('submitReport.tipPhotoText') }}</p>
+              </div>
+              <div>
+                <p class="font-medium text-foreground">{{ t('submitReport.tipLocationTitle') }}</p>
+                <p>{{ t('submitReport.tipLocationText') }}</p>
+              </div>
+              <div>
+                <p class="font-medium text-foreground">{{ t('submitReport.tipSafetyTitle') }}</p>
+                <p>{{ t('submitReport.tipSafetyText') }}</p>
+              </div>
+            </div>
           </div>
         </aside>
       </div>
