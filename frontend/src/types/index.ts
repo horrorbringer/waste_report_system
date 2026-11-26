@@ -1,4 +1,4 @@
-export type UserRole = 'resident' | 'admin'
+export type UserRole = string
 export type ReportStatus = 'Pending' | 'In Progress' | 'Resolved'
 
 export interface User {
@@ -6,6 +6,29 @@ export interface User {
   full_name: string
   email: string
   role: UserRole
+  permissions?: string[]
+  created_at: string
+}
+
+export interface AdminUser extends User {
+  report_count: number
+}
+
+export interface PermissionDefinition {
+  key: string
+  group: string
+  label: string
+  description: string
+}
+
+export interface RoleItem {
+  id: number
+  slug: string
+  name: string
+  description: string | null
+  permissions: string[]
+  is_system: boolean
+  user_count: number
   created_at: string
 }
 

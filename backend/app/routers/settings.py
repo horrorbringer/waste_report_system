@@ -3,7 +3,7 @@ from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 
 from app.database import get_db
-from app.deps import require_admin
+from app.deps import require_permission
 from app.models import User
 from app.schemas import AdminSettingsResponse, AdminSettingsUpdate, StorageTestResponse
 from app.services.settings_service import (
@@ -19,7 +19,7 @@ router = APIRouter(prefix="/api/admin/settings", tags=["Admin Settings"])
 @router.get("", response_model=AdminSettingsResponse)
 def get_admin_settings(
     db: Session = Depends(get_db),
-    _: User = Depends(require_admin),
+    _: User = Depends(require_permission("settings:manage")),
 ) -> AdminSettingsResponse:
     resolved = resolve_settings(db)
     return to_admin_settings_response(resolved)
@@ -29,7 +29,7 @@ def get_admin_settings(
 def save_admin_settings(
     payload: AdminSettingsUpdate,
     db: Session = Depends(get_db),
-    admin_user: User = Depends(require_admin),
+    admin_user: User = Depends(require_permission("settings:manage")),
 ) -> AdminSettingsResponse:
     resolved = update_settings(db, payload, admin_user)
     return to_admin_settings_response(resolved)
@@ -39,7 +39,7 @@ def save_admin_settings(
 async def test_storage_connection(
     payload: AdminSettingsUpdate | None = None,
     db: Session = Depends(get_db),
-    _: User = Depends(require_admin),
+    _: User = Depends(require_permission("settings:manage")),
 ) -> StorageTestResponse:
     """Test active (or unsaved draft) storage provider credentials live."""
     resolved = resolve_settings(db)

@@ -74,7 +74,7 @@ function handleLogout() {
                 </Button>
               </RouterLink>
 
-              <RouterLink v-if="auth.isAdmin" to="/admin/dashboard">
+              <RouterLink v-if="auth.isStaff" to="/admin/dashboard">
                 <Button variant="outline" size="sm" class="ml-1 border-primary/40 text-primary hover:bg-primary/10 gap-1.5 text-xs">
                   <ShieldCheck class="h-3.5 w-3.5" />
                   {{ t('nav.adminPortal') }}
@@ -91,7 +91,7 @@ function handleLogout() {
           <template v-if="auth.isAuthenticated && auth.user">
             <div class="hidden items-center gap-2 lg:flex">
               <span class="text-xs sm:text-sm font-medium truncate max-w-[120px]">{{ auth.user.full_name }}</span>
-              <Badge :variant="auth.isAdmin ? 'default' : 'secondary'" class="text-[10px] px-2 py-0.5">
+              <Badge :variant="auth.isStaff ? 'default' : 'secondary'" class="text-[10px] px-2 py-0.5">
                 {{ translateRole(auth.user.role, t) }}
               </Badge>
             </div>
@@ -175,7 +175,7 @@ function handleLogout() {
       </RouterLink>
 
       <RouterLink
-        v-if="auth.isAdmin"
+        v-if="auth.isStaff"
         to="/admin/dashboard"
         class="flex flex-col items-center justify-center gap-0.5 text-[10px] font-medium transition py-1"
         :class="route.path.startsWith('/admin') ? 'text-primary font-bold' : 'text-muted-foreground hover:text-foreground'"

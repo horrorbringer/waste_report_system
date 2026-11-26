@@ -7,6 +7,8 @@ declare module 'vue-router' {
     requiresAuth?: boolean
     guestOnly?: boolean
     roles?: UserRole[]
+    permission?: string
+    permissionsAny?: string[]
     titleKey?: string
   }
 }
@@ -40,49 +42,69 @@ const routes: RouteRecordRaw[] = [
     path: '/reports/new',
     name: 'submit-report',
     component: () => import('@/views/SubmitReportView.vue'),
-    meta: { requiresAuth: true, roles: ['resident', 'admin'], titleKey: 'routes.submitReport' },
+    meta: { requiresAuth: true, titleKey: 'routes.submitReport' },
   },
   {
     path: '/my-reports',
     name: 'my-reports',
     component: () => import('@/views/MyReportsView.vue'),
-    meta: { requiresAuth: true, roles: ['resident', 'admin'], titleKey: 'routes.myReports' },
+    meta: { requiresAuth: true, titleKey: 'routes.myReports' },
   },
   {
     path: '/reports/:id',
     name: 'report-detail',
     component: () => import('@/views/ReportDetailView.vue'),
-    meta: { requiresAuth: true, roles: ['resident', 'admin'], titleKey: 'routes.reportDetail' },
+    meta: { requiresAuth: true, titleKey: 'routes.reportDetail' },
   },
   {
     path: '/admin',
     component: () => import('@/layouts/AdminLayout.vue'),
     redirect: '/admin/dashboard',
-    meta: { requiresAuth: true, roles: ['admin'] },
+    meta: {
+      requiresAuth: true,
+      permissionsAny: [
+        'dashboard:view',
+        'reports:view_all',
+        'categories:manage',
+        'users:manage',
+        'roles:manage',
+        'settings:manage',
+      ],
+    },
     children: [
       {
         path: 'dashboard',
         name: 'admin-dashboard',
         component: () => import('@/views/admin/DashboardView.vue'),
-        meta: { requiresAuth: true, roles: ['admin'], titleKey: 'routes.adminDashboard' },
+        meta: { requiresAuth: true, permission: 'dashboard:view', titleKey: 'routes.adminDashboard' },
       },
       {
         path: 'reports',
         name: 'admin-reports',
         component: () => import('@/views/admin/ReportsManagementView.vue'),
-        meta: { requiresAuth: true, roles: ['admin'], titleKey: 'routes.adminReports' },
+        meta: { requiresAuth: true, permission: 'reports:view_all', titleKey: 'routes.adminReports' },
       },
       {
         path: 'categories',
         name: 'admin-categories',
         component: () => import('@/views/admin/CategoryManagementView.vue'),
-        meta: { requiresAuth: true, roles: ['admin'], titleKey: 'routes.adminCategories' },
+        meta: { requiresAuth: true, permission: 'categories:manage', titleKey: 'routes.adminCategories' },
+      },
+      {
+        path: 'users',
+        name: 'admin-users',
+        component: () => import('@/views/admin/UsersManagementView.vue'),
+        meta: {
+          requiresAuth: true,
+          permissionsAny: ['users:manage', 'roles:manage'],
+          titleKey: 'routes.adminUsers',
+        },
       },
       {
         path: 'settings',
         name: 'admin-settings',
         component: () => import('@/views/admin/SettingsView.vue'),
-        meta: { requiresAuth: true, roles: ['admin'], titleKey: 'routes.adminSettings' },
+        meta: { requiresAuth: true, permission: 'settings:manage', titleKey: 'routes.adminSettings' },
       },
     ],
   },
@@ -118,10 +140,18 @@ router.beforeEach(async (to) => {
   }
 
   if (to.meta.guestOnly && auth.isAuthenticated) {
-    return auth.isAdmin ? { name: 'admin-dashboard' } : { name: 'my-reports' }
+    return auth.isStaff ? { name: 'admin-dashboard' } : { name: 'my-reports' }
   }
 
   if (to.meta.roles && to.meta.roles.length > 0 && !auth.hasRole(to.meta.roles)) {
+    return { name: 'forbidden' }
+  }
+
+  if (to.meta.permission && !auth.hasPermission(to.meta.permission)) {
+    return { name: 'forbidden' }
+  }
+
+  if (to.meta.permissionsAny && to.meta.permissionsAny.length > 0 && !auth.hasAnyPermission(to.meta.permissionsAny)) {
     return { name: 'forbidden' }
   }
 

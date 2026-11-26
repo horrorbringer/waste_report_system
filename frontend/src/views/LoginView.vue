@@ -27,7 +27,7 @@ async function handleSubmit() {
     const redirect = typeof route.query.redirect === 'string' ? route.query.redirect : null
     if (redirect) {
       router.push(redirect)
-    } else if (user.role === 'admin') {
+    } else if (auth.isStaff) {
       router.push('/admin/dashboard')
     } else {
       router.push('/my-reports')

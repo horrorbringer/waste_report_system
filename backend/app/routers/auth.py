@@ -5,11 +5,18 @@ from sqlalchemy.orm import Session
 from app.database import get_db
 from app.deps import get_current_user
 from app.models import User
+from app.permissions import get_role_permissions
 from app.schemas import TokenResponse, UserCreate, UserLogin, UserResponse
 from app.security import create_access_token, hash_password, verify_password
 from app.services.settings_service import resolve_settings
 
 router = APIRouter(prefix="/api/auth", tags=["Authentication"])
+
+
+def _serialize_user_with_permissions(db: Session, user: User) -> UserResponse:
+    base = UserResponse.model_validate(user)
+    base.permissions = get_role_permissions(db, user.role)
+    return base
 
 
 @router.post("/register", response_model=TokenResponse, status_code=status.HTTP_201_CREATED)
@@ -40,7 +47,7 @@ def register(payload: UserCreate, db: Session = Depends(get_db)) -> TokenRespons
     db.refresh(user)
 
     token = create_access_token(subject=user.id, role=user.role)
-    return TokenResponse(access_token=token, user=UserResponse.model_validate(user))
+    return TokenResponse(access_token=token, user=_serialize_user_with_permissions(db, user))
 
 
 @router.post("/login", response_model=TokenResponse)
@@ -54,9 +61,12 @@ def login(payload: UserLogin, db: Session = Depends(get_db)) -> TokenResponse:
         )
 
     token = create_access_token(subject=user.id, role=user.role)
-    return TokenResponse(access_token=token, user=UserResponse.model_validate(user))
+    return TokenResponse(access_token=token, user=_serialize_user_with_permissions(db, user))
 
 
 @router.get("/me", response_model=UserResponse)
-def get_me(current_user: User = Depends(get_current_user)) -> UserResponse:
-    return UserResponse.model_validate(current_user)
+def get_me(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> UserResponse:
+    return _serialize_user_with_permissions(db, current_user)

@@ -134,7 +134,7 @@ const isMyReport = computed(() => {
 
 const canDelete = computed(() => {
   if (!report.value) return false
-  return auth.isAdmin || (Boolean(isMyReport.value) && report.value.status === 'Pending')
+  return auth.hasPermission('reports:delete_any') || (Boolean(isMyReport.value) && report.value.status === 'Pending')
 })
 
 const justSubmitted = computed(() => Boolean(
@@ -204,7 +204,7 @@ async function handleDeleteReport() {
   try {
     await reportStore.deleteReport(report.value.id)
     deleteDialogOpen.value = false
-    router.replace(auth.isAdmin ? '/admin/reports' : '/my-reports')
+    router.replace(auth.hasPermission('reports:view_all') ? '/admin/reports' : '/my-reports')
   } catch (err: any) {
     error.value = err.response?.data?.detail || t('adminReports.errDeleteFailed')
     deleteDialogOpen.value = false
@@ -239,7 +239,7 @@ async function handleDeleteReport() {
 
           <!-- Admin Quick Status Trigger -->
           <ReportPublicationDialog
-            v-if="auth.isAdmin && report"
+            v-if="auth.hasPermission('reports:update_status') && report"
             :report-id="report.id"
             :location-text="report.location_text"
             :location-district="report.location_district"
@@ -248,7 +248,7 @@ async function handleDeleteReport() {
           />
 
           <Button
-            v-if="auth.isAdmin && report"
+            v-if="auth.hasPermission('reports:update_status') && report"
             size="sm"
             class="h-8 gap-1.5 shadow-sm font-medium"
             @click="openStatusDialog"

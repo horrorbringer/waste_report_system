@@ -4,7 +4,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 
 from app.config import settings
-from app.database import Base, engine, ensure_schema_columns
+from app.database import Base, SessionLocal, engine, ensure_schema_columns
+from app.permissions import ensure_default_roles
 from app.routers import admin, auth, categories, reports
 from app.routers import settings as settings_router
 
@@ -13,6 +14,8 @@ from app.routers import settings as settings_router
 async def lifespan(_: FastAPI):
     Base.metadata.create_all(bind=engine)
     ensure_schema_columns(engine)
+    with SessionLocal() as db:
+        ensure_default_roles(db)
     yield
 
 

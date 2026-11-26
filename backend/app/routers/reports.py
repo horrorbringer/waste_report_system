@@ -5,7 +5,7 @@ from sqlalchemy.orm import Session, joinedload
 
 from app.cambodia_areas import Province, districts_by_code, provinces, provinces_by_code
 from app.database import get_db
-from app.deps import get_current_user, require_admin, require_resident_or_admin
+from app.deps import get_current_user, require_permission, require_resident_or_admin, user_has_permission
 from app.models import Category, StatusHistory, User, WasteReport
 from app.schemas import (
     BulkActionResponse,
@@ -336,7 +336,7 @@ def list_all_reports(
     limit: int = Query(default=100, ge=1, le=500),
     offset: int = Query(default=0, ge=0),
     db: Session = Depends(get_db),
-    _: User = Depends(require_admin),
+    _: User = Depends(require_permission("reports:view_all")),
 ) -> list[ReportResponse]:
     stmt = (
         select(WasteReport)
@@ -383,7 +383,7 @@ def get_report_detail(
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Report not found.")
 
     # RBAC + resource ownership check
-    if report.user_id != current_user.id and current_user.role != "admin":
+    if report.user_id != current_user.id and not user_has_permission(db, current_user, "reports:view_all"):
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="You do not have permission to view this report.",
@@ -397,7 +397,7 @@ def set_report_publication(
     report_id: int,
     payload: ReportPublication,
     db: Session = Depends(get_db),
-    _: User = Depends(require_admin),
+    _: User = Depends(require_permission("reports:update_status")),
 ) -> ReportPublication:
     result = db.execute(
         update(WasteReport)
@@ -415,7 +415,7 @@ def update_report_status(
     report_id: int,
     payload: ReportUpdateStatus,
     db: Session = Depends(get_db),
-    admin_user: User = Depends(require_admin),
+    admin_user: User = Depends(require_permission("reports:update_status")),
 ) -> ReportDetailResponse:
     report = db.get(WasteReport, report_id)
     if report is None:
@@ -459,7 +459,7 @@ def delete_report(
     if report is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Report not found.")
 
-    if current_user.role != "admin":
+    if not user_has_permission(db, current_user, "reports:delete_any"):
         if report.user_id != current_user.id:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
@@ -482,7 +482,7 @@ def delete_report(
 def bulk_update_report_status(
     payload: BulkStatusRequest,
     db: Session = Depends(get_db),
-    admin_user: User = Depends(require_admin),
+    admin_user: User = Depends(require_permission("reports:update_status")),
 ) -> BulkActionResponse:
     reports = db.scalars(select(WasteReport).where(WasteReport.id.in_(payload.report_ids))).all()
     if not reports:
@@ -511,7 +511,7 @@ def bulk_update_report_status(
 def bulk_delete_reports(
     payload: BulkDeleteRequest,
     db: Session = Depends(get_db),
-    _: User = Depends(require_admin),
+    _: User = Depends(require_permission("reports:delete_any")),
 ) -> BulkActionResponse:
     reports = db.scalars(select(WasteReport).where(WasteReport.id.in_(payload.report_ids))).all()
     if not reports:

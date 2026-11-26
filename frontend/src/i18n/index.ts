@@ -52,6 +52,7 @@ export function translateStatus(status: string, t: (key: string) => string): str
 
 export function translateRole(role: string, t: (key: string) => string): string {
   if (role === 'admin') return t('roles.admin')
+  if (role === 'moderator') return t('roles.moderator')
   if (role === 'resident') return t('roles.resident')
   return role
 }

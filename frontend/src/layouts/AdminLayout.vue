@@ -7,6 +7,7 @@ import {
   LayoutDashboard,
   FileText,
   Tags,
+  Users,
   Settings,
   Home,
   ClipboardList,
@@ -26,12 +27,25 @@ const route = useRoute()
 const router = useRouter()
 const mobileMenuOpen = ref(false)
 
-const navItems = computed(() => [
-  { label: t('nav.dashboard'), to: '/admin/dashboard', icon: LayoutDashboard },
-  { label: t('nav.manageReports'), to: '/admin/reports', icon: FileText },
-  { label: t('nav.categories'), to: '/admin/categories', icon: Tags },
-  { label: t('nav.settings'), to: '/admin/settings', icon: Settings },
-])
+const navItems = computed(() => {
+  const items = []
+  if (auth.hasPermission('dashboard:view')) {
+    items.push({ label: t('nav.dashboard'), to: '/admin/dashboard', icon: LayoutDashboard })
+  }
+  if (auth.hasPermission('reports:view_all')) {
+    items.push({ label: t('nav.manageReports'), to: '/admin/reports', icon: FileText })
+  }
+  if (auth.hasPermission('categories:manage')) {
+    items.push({ label: t('nav.categories'), to: '/admin/categories', icon: Tags })
+  }
+  if (auth.hasAnyPermission(['users:manage', 'roles:manage'])) {
+    items.push({ label: t('nav.users'), to: '/admin/users', icon: Users })
+  }
+  if (auth.hasPermission('settings:manage')) {
+    items.push({ label: t('nav.settings'), to: '/admin/settings', icon: Settings })
+  }
+  return items
+})
 
 const pageTitle = computed(() => {
   const key = route.meta.titleKey

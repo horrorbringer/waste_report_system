@@ -3,7 +3,7 @@ from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from app.database import get_db
-from app.deps import require_admin
+from app.deps import require_permission
 from app.models import Category, User, WasteReport
 from app.schemas import CategoryCreate, CategoryResponse, CategoryUpdate
 
@@ -37,7 +37,7 @@ def list_categories(db: Session = Depends(get_db)) -> list[CategoryResponse]:
 def create_category(
     payload: CategoryCreate,
     db: Session = Depends(get_db),
-    _: User = Depends(require_admin),
+    _: User = Depends(require_permission("categories:manage")),
 ) -> CategoryResponse:
     clean_name = payload.name.strip()
     existing = db.scalar(select(Category).where(func.lower(Category.name) == clean_name.lower()))
@@ -77,7 +77,7 @@ def update_category(
     category_id: int,
     payload: CategoryUpdate,
     db: Session = Depends(get_db),
-    _: User = Depends(require_admin),
+    _: User = Depends(require_permission("categories:manage")),
 ) -> CategoryResponse:
     category = db.get(Category, category_id)
     if category is None:
@@ -127,7 +127,7 @@ def update_category(
 def delete_category(
     category_id: int,
     db: Session = Depends(get_db),
-    _: User = Depends(require_admin),
+    _: User = Depends(require_permission("categories:manage")),
 ) -> None:
     category = db.get(Category, category_id)
     if category is None:

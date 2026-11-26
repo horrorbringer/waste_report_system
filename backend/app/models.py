@@ -16,7 +16,7 @@ class User(Base):
     full_name: Mapped[str] = mapped_column(String(120), nullable=False)
     email: Mapped[str] = mapped_column(String(255), unique=True, index=True, nullable=False)
     password_hash: Mapped[str] = mapped_column(String(255), nullable=False)
-    role: Mapped[str] = mapped_column(String(20), default="resident", nullable=False)
+    role: Mapped[str] = mapped_column(String(40), default="resident", nullable=False)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now, nullable=False)
 
     reports: Mapped[list["WasteReport"]] = relationship(
@@ -25,6 +25,18 @@ class User(Base):
     status_changes: Mapped[list["StatusHistory"]] = relationship(
         "StatusHistory", back_populates="actor"
     )
+
+
+class Role(Base):
+    __tablename__ = "roles"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+    slug: Mapped[str] = mapped_column(String(40), unique=True, index=True, nullable=False)
+    name: Mapped[str] = mapped_column(String(80), nullable=False)
+    description: Mapped[str | None] = mapped_column(String(300), nullable=True)
+    permissions: Mapped[list[str]] = mapped_column(JSON, default=list, nullable=False)
+    is_system: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now, nullable=False)
 
 
 class Category(Base):

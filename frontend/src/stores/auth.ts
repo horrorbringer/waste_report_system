@@ -10,14 +10,41 @@ export const useAuthStore = defineStore('auth', () => {
   )
   const loading = ref(false)
 
+  const STAFF_PERMISSIONS = [
+    'dashboard:view',
+    'reports:view_all',
+    'reports:update_status',
+    'reports:delete_any',
+    'categories:manage',
+    'users:manage',
+    'roles:manage',
+    'settings:manage',
+  ]
+
   const isAuthenticated = computed(() => Boolean(token.value && user.value))
   const isAdmin = computed(() => user.value?.role === 'admin')
+  const isModerator = computed(() => user.value?.role === 'moderator')
+  const permissions = computed<string[]>(() => user.value?.permissions ?? [])
   const isResident = computed(() => user.value?.role === 'resident')
 
   function hasRole(roles: UserRole[]): boolean {
     if (!user.value) return false
     return roles.includes(user.value.role)
   }
+
+  function hasPermission(permission: string): boolean {
+    if (!user.value) return false
+    if (user.value.role === 'admin') return true
+    return permissions.value.includes(permission)
+  }
+
+  function hasAnyPermission(perms: string[]): boolean {
+    if (!user.value) return false
+    if (user.value.role === 'admin') return true
+    return perms.some((p) => permissions.value.includes(p))
+  }
+
+  const isStaff = computed(() => hasAnyPermission(STAFF_PERMISSIONS))
 
   function setSession(data: TokenResponse) {
     token.value = data.access_token
@@ -78,8 +105,13 @@ export const useAuthStore = defineStore('auth', () => {
     loading,
     isAuthenticated,
     isAdmin,
+    isModerator,
+    isStaff,
     isResident,
+    permissions,
     hasRole,
+    hasPermission,
+    hasAnyPermission,
     login,
     register,
     logout,

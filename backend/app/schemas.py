@@ -7,7 +7,7 @@ from app.cambodia_areas import validate_district_code, validate_province_code
 ReportStatus = Literal["Pending", "In Progress", "Resolved"]
 DistrictCode = Annotated[int, AfterValidator(validate_district_code)]
 ProvinceCode = Annotated[int, AfterValidator(validate_province_code)]
-UserRole = Literal["resident", "admin"]
+UserRole = Literal["resident", "moderator", "admin"]
 EmailField = Annotated[
     str,
     StringConstraints(
@@ -35,6 +35,7 @@ class UserResponse(BaseModel):
     full_name: str
     email: str
     role: str
+    permissions: list[str] = []
     created_at: datetime
 
     model_config = ConfigDict(from_attributes=True)
@@ -212,6 +213,63 @@ class AdminDashboardStats(BaseModel):
     status_distribution: list[StatusDistributionItem]
     category_distribution: list[CategoryDistributionItem]
     recent_reports: list[ReportResponse]
+
+
+class AdminUserResponse(BaseModel):
+    id: int
+    full_name: str
+    email: str
+    role: str
+    created_at: datetime
+    report_count: int = 0
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class AdminUserCreate(BaseModel):
+    full_name: str = Field(..., min_length=2, max_length=120)
+    email: str = Field(..., min_length=5, max_length=255, pattern=r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
+    password: str = Field(..., min_length=6, max_length=128)
+    role: str = Field(default="resident", min_length=2, max_length=40)
+
+
+class AdminUserUpdate(BaseModel):
+    full_name: str | None = Field(default=None, min_length=2, max_length=120)
+    role: str | None = Field(default=None, min_length=2, max_length=40)
+    password: str | None = Field(default=None, min_length=6, max_length=128)
+
+
+class PermissionDefinition(BaseModel):
+    key: str
+    group: str
+    label: str
+    description: str
+
+
+class RoleResponse(BaseModel):
+    id: int
+    slug: str
+    name: str
+    description: str | None = None
+    permissions: list[str] = []
+    is_system: bool = False
+    user_count: int = 0
+    created_at: datetime
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class RoleCreate(BaseModel):
+    name: str = Field(..., min_length=2, max_length=80)
+    slug: str | None = Field(default=None, min_length=2, max_length=40, pattern=r"^[a-z0-9_-]+$")
+    description: str | None = Field(default=None, max_length=300)
+    permissions: list[str] = []
+
+
+class RoleUpdate(BaseModel):
+    name: str | None = Field(default=None, min_length=2, max_length=80)
+    description: str | None = Field(default=None, max_length=300)
+    permissions: list[str] | None = None
 
 
 StorageProviderId = Literal["cloudinary", "s3_compatible", "local"]
