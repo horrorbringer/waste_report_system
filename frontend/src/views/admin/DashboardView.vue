@@ -7,7 +7,9 @@ import {
   ArrowRight,
   CheckCircle2,
   Clock,
+  Edit3,
   ExternalLink,
+  Eye,
   FileText,
   Filter,
   ImageIcon,
@@ -17,8 +19,10 @@ import {
   RefreshCw,
   Search,
   Sparkles,
+  Trash2,
   TrendingUp,
   User as UserIcon,
+  X,
 } from 'lucide-vue-next'
 import StatusBadge from '@/components/StatusBadge.vue'
 import { StatusDonutChart, CategoryBarChart } from '@/components/ui/chart'
@@ -62,6 +66,7 @@ const router = useRouter()
 const reportStore = useReportStore()
 
 const searchQuery = ref('')
+const recentStatusFilter = ref<'ALL' | ReportStatus>('ALL')
 const selectedPhoto = ref<string | null>(null)
 const selectedPhotoTitle = ref('')
 
@@ -72,6 +77,11 @@ const nextStatus = ref<ReportStatus>('In Progress')
 const statusNote = ref('')
 const savingStatus = ref(false)
 const updateError = ref('')
+
+// Delete Dialog State
+const deleteDialogOpen = ref(false)
+const reportToDelete = ref<WasteReport | null>(null)
+const deleting = ref(false)
 
 onMounted(() => {
   reportStore.fetchAdminStats()
@@ -111,14 +121,18 @@ const topCategoryName = computed(() => {
 const filteredRecentReports = computed(() => {
   const reports = stats.value?.recent_reports ?? []
   const query = searchQuery.value.trim().toLowerCase()
-  if (!query) return reports
 
   return reports.filter((r) => {
+    if (recentStatusFilter.value !== 'ALL' && r.status !== recentStatusFilter.value) {
+      return false
+    }
+    if (!query) return true
     const titleMatch = r.title.toLowerCase().includes(query)
     const locationMatch = r.location_text.toLowerCase().includes(query)
     const reporterMatch = r.reporter_name.toLowerCase().includes(query)
     const catMatch = r.category_name.toLowerCase().includes(query)
-    return titleMatch || locationMatch || reporterMatch || catMatch
+    const catKmMatch = (r.category_name_km ?? '').toLowerCase().includes(query)
+    return titleMatch || locationMatch || reporterMatch || catMatch || catKmMatch || String(r.id) === query
   })
 })
 
@@ -151,6 +165,24 @@ async function handleStatusSave() {
     updateError.value = err.response?.data?.detail || t('detail.errUpdateFailed')
   } finally {
     savingStatus.value = false
+  }
+}
+
+function openDeleteModal(report: WasteReport) {
+  reportToDelete.value = report
+  deleteDialogOpen.value = true
+}
+
+async function handleDeleteReport() {
+  if (!reportToDelete.value) return
+  deleting.value = true
+  try {
+    await reportStore.deleteReport(reportToDelete.value.id)
+    deleteDialogOpen.value = false
+    reportToDelete.value = null
+    await reportStore.fetchAdminStats()
+  } finally {
+    deleting.value = false
   }
 }
 </script>
@@ -338,10 +370,10 @@ async function handleStatusSave() {
       </Card>
     </div>
 
-    <!-- Enhanced Recent Submissions Table with Photo Thumbnails & Inline Status Modal -->
+    <!-- Enhanced Recent Submissions Table with Status Filter, Search & Grouped Actions -->
     <Card class="border-border/60 shadow-sm">
       <CardHeader class="pb-3">
-        <div class="flex flex-wrap items-center justify-between gap-3">
+        <div class="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
           <div>
             <CardTitle class="text-base font-semibold">
               {{ t('adminDashboard.recentTitle') }}
@@ -351,19 +383,64 @@ async function handleStatusSave() {
             </CardDescription>
           </div>
 
-          <!-- Quick Search & View All Link -->
-          <div class="flex flex-wrap items-center gap-2.5">
-            <div class="relative w-56 sm:w-64">
-              <Search class="absolute left-2.5 top-2.5 h-3.5 w-3.5 text-muted-foreground" />
+          <!-- Status Filter Pills, Search & View All -->
+          <div class="flex flex-wrap items-center gap-2">
+            <div class="inline-flex items-center rounded-lg border bg-muted/40 p-0.5 text-xs">
+              <button
+                type="button"
+                class="rounded-md px-2 py-1 font-medium transition-colors"
+                :class="recentStatusFilter === 'ALL' ? 'bg-background text-foreground shadow-xs' : 'text-muted-foreground hover:text-foreground'"
+                @click="recentStatusFilter = 'ALL'"
+              >
+                {{ t('community.allStatuses') }}
+              </button>
+              <button
+                type="button"
+                class="rounded-md px-2 py-1 font-medium transition-colors"
+                :class="recentStatusFilter === 'Pending' ? 'bg-background text-foreground shadow-xs' : 'text-muted-foreground hover:text-foreground'"
+                @click="recentStatusFilter = 'Pending'"
+              >
+                {{ t('status.pending') }}
+              </button>
+              <button
+                type="button"
+                class="rounded-md px-2 py-1 font-medium transition-colors"
+                :class="recentStatusFilter === 'In Progress' ? 'bg-background text-foreground shadow-xs' : 'text-muted-foreground hover:text-foreground'"
+                @click="recentStatusFilter = 'In Progress'"
+              >
+                {{ t('status.inProgress') }}
+              </button>
+              <button
+                type="button"
+                class="rounded-md px-2 py-1 font-medium transition-colors"
+                :class="recentStatusFilter === 'Resolved' ? 'bg-background text-foreground shadow-xs' : 'text-muted-foreground hover:text-foreground'"
+                @click="recentStatusFilter = 'Resolved'"
+              >
+                {{ t('status.resolved') }}
+              </button>
+            </div>
+
+            <div class="relative w-52 sm:w-60">
+              <Search class="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
               <Input
                 v-model="searchQuery"
                 :placeholder="t('adminDashboard.searchRecent')"
-                class="h-8 pl-8 text-xs"
+                class="h-8 pl-8 pr-7 text-xs"
               />
+              <button
+                v-if="searchQuery"
+                type="button"
+                class="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                @click="searchQuery = ''"
+              >
+                <X class="h-3.5 w-3.5" />
+              </button>
             </div>
+
             <RouterLink to="/admin/reports">
-              <Button variant="outline" size="sm" class="h-8 text-xs">
+              <Button variant="outline" size="sm" class="h-8 gap-1 text-xs">
                 {{ t('adminDashboard.viewAll') }}
+                <ArrowRight class="h-3 w-3" />
               </Button>
             </RouterLink>
           </div>
@@ -375,8 +452,6 @@ async function handleStatusSave() {
           <Table>
             <TableHeader>
               <TableRow class="bg-muted/30">
-                <TableHead class="w-14 font-mono text-xs">{{ t('adminDashboard.colId') }}</TableHead>
-                <TableHead class="w-16">{{ t('adminDashboard.colPhoto') }}</TableHead>
                 <TableHead>{{ t('adminDashboard.colReport') }}</TableHead>
                 <TableHead>{{ t('adminDashboard.colCategory') }}</TableHead>
                 <TableHead>{{ t('adminDashboard.colReporter') }}</TableHead>
@@ -386,53 +461,73 @@ async function handleStatusSave() {
               </TableRow>
             </TableHeader>
             <TableBody>
+              <!-- Loading Skeleton Rows -->
+              <template v-if="reportStore.loading && !stats">
+                <TableRow v-for="n in 4" :key="`skel-${n}`">
+                  <TableCell>
+                    <div class="flex items-center gap-3">
+                      <Skeleton class="h-10 w-10 shrink-0 rounded-lg" />
+                      <div class="space-y-1.5">
+                        <Skeleton class="h-4 w-44" />
+                        <Skeleton class="h-3 w-32" />
+                      </div>
+                    </div>
+                  </TableCell>
+                  <TableCell><Skeleton class="h-5 w-24 rounded-full" /></TableCell>
+                  <TableCell><Skeleton class="h-4 w-24" /></TableCell>
+                  <TableCell><Skeleton class="h-5 w-20 rounded-full" /></TableCell>
+                  <TableCell><Skeleton class="h-4 w-24" /></TableCell>
+                  <TableCell class="text-right"><Skeleton class="ml-auto h-8 w-24 rounded-lg" /></TableCell>
+                </TableRow>
+              </template>
+
               <TableRow
                 v-for="report in filteredRecentReports"
+                v-else
                 :key="report.id"
                 class="transition-colors hover:bg-muted/40"
               >
-                <!-- ID -->
-                <TableCell class="font-mono text-xs tabular-nums text-muted-foreground">
-                  #{{ report.id }}
-                </TableCell>
-
-                <!-- Photo Thumbnail -->
+                <!-- Combined Thumbnail + #ID + Title & Location -->
                 <TableCell>
-                  <div v-if="report.photo_path" class="relative group">
-                    <button
-                      type="button"
-                      class="relative h-10 w-10 overflow-hidden rounded-lg border bg-muted/30 transition hover:ring-2 hover:ring-primary/40 focus:outline-none"
-                      @click="openPhotoPreview(report.photo_path, report.title)"
+                  <div class="flex items-center gap-3">
+                    <div v-if="report.photo_path" class="group relative shrink-0">
+                      <button
+                        type="button"
+                        class="relative h-10 w-10 overflow-hidden rounded-lg border bg-muted/30 transition hover:ring-2 hover:ring-primary/40 focus:outline-none"
+                        @click="openPhotoPreview(report.photo_path, report.title)"
+                      >
+                        <img
+                          :src="resolvePhotoUrl(report.photo_path)"
+                          :alt="report.title"
+                          class="h-full w-full object-cover transition duration-200 group-hover:scale-110"
+                          loading="lazy"
+                        />
+                      </button>
+                    </div>
+                    <div
+                      v-else
+                      class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-dashed bg-muted/10 text-muted-foreground/40"
                     >
-                      <img
-                        :src="resolvePhotoUrl(report.photo_path)"
-                        :alt="report.title"
-                        class="h-full w-full object-cover transition duration-200 group-hover:scale-110"
-                        loading="lazy"
-                      />
-                    </button>
-                  </div>
-                  <div
-                    v-else
-                    class="flex h-10 w-10 items-center justify-center rounded-lg border border-dashed bg-muted/10 text-muted-foreground/40"
-                  >
-                    <ImageIcon class="h-4 w-4" />
-                  </div>
-                </TableCell>
+                      <ImageIcon class="h-4 w-4" />
+                    </div>
 
-                <!-- Title & Location -->
-                <TableCell>
-                  <div class="max-w-[280px]">
-                    <RouterLink
-                      :to="`/reports/${report.id}`"
-                      class="truncate font-medium text-foreground hover:text-primary hover:underline block text-sm"
-                    >
-                      {{ report.title }}
-                    </RouterLink>
-                    <p class="truncate text-xs text-muted-foreground flex items-center gap-1 mt-0.5">
-                      <MapPin class="h-3 w-3 shrink-0 text-primary" />
-                      {{ report.location_text }}
-                    </p>
+                    <div class="min-w-0 max-w-[260px]">
+                      <div class="flex items-center gap-1.5">
+                        <span class="shrink-0 rounded bg-muted px-1.5 py-0.5 font-mono text-[10px] font-semibold tabular-nums text-muted-foreground">
+                          #{{ report.id }}
+                        </span>
+                        <RouterLink
+                          :to="`/reports/${report.id}`"
+                          class="truncate text-sm font-medium text-foreground hover:text-primary hover:underline"
+                        >
+                          {{ report.title }}
+                        </RouterLink>
+                      </div>
+                      <p class="mt-0.5 flex items-center gap-1 truncate text-xs text-muted-foreground">
+                        <MapPin class="h-3 w-3 shrink-0 text-primary" />
+                        <span class="truncate">{{ report.location_text }}</span>
+                      </p>
+                    </div>
                   </div>
                 </TableCell>
 
@@ -461,29 +556,44 @@ async function handleStatusSave() {
                   {{ formatDate(report.created_at, locale) }}
                 </TableCell>
 
-                <!-- Action Controls (Quick Status & Inspect) -->
-                <TableCell class="text-right whitespace-nowrap">
-                  <div class="flex items-center justify-end gap-1.5">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      class="h-7 px-2.5 text-xs shadow-none hover:border-primary hover:text-primary"
+                <!-- Grouped Action Pill -->
+                <TableCell class="whitespace-nowrap text-right">
+                  <div class="inline-flex items-center rounded-lg border bg-background p-0.5 shadow-2xs">
+                    <RouterLink
+                      :to="`/reports/${report.id}`"
+                      class="inline-flex h-7 items-center gap-1 rounded-md px-2 text-xs font-medium text-foreground transition-colors hover:bg-muted"
+                      :title="t('common.inspect')"
+                    >
+                      <Eye class="h-3.5 w-3.5 text-muted-foreground" />
+                      <span class="hidden xl:inline">{{ t('common.inspect') }}</span>
+                    </RouterLink>
+                    <span class="mx-0.5 h-4 w-px bg-border" aria-hidden="true" />
+                    <button
+                      type="button"
+                      class="inline-flex h-7 items-center gap-1 rounded-md px-2 text-xs font-medium text-foreground transition-colors hover:bg-muted"
+                      :title="t('adminDashboard.quickStatus')"
                       @click="openStatusDialog(report)"
                     >
-                      {{ t('adminDashboard.quickStatus') }}
-                    </Button>
-                    <RouterLink :to="`/reports/${report.id}`">
-                      <Button variant="ghost" size="sm" class="h-7 px-2 text-xs">
-                        {{ t('common.inspect') }}
-                      </Button>
-                    </RouterLink>
+                      <Edit3 class="h-3.5 w-3.5 text-primary" />
+                      <span class="hidden xl:inline">{{ t('adminDashboard.quickStatus') }}</span>
+                    </button>
+                    <span class="mx-0.5 h-4 w-px bg-border" aria-hidden="true" />
+                    <button
+                      type="button"
+                      class="inline-flex h-7 items-center justify-center rounded-md px-2 text-xs font-medium text-destructive transition-colors hover:bg-destructive/10"
+                      :title="t('adminReports.deleteBtn')"
+                      :aria-label="t('adminReports.deleteBtn')"
+                      @click="openDeleteModal(report)"
+                    >
+                      <Trash2 class="h-3.5 w-3.5" />
+                    </button>
                   </div>
                 </TableCell>
               </TableRow>
 
               <!-- Empty State -->
-              <TableRow v-if="filteredRecentReports.length === 0">
-                <TableCell colspan="8" class="py-12 text-center text-muted-foreground">
+              <TableRow v-if="(!reportStore.loading || stats) && filteredRecentReports.length === 0">
+                <TableCell colspan="6" class="py-12 text-center text-muted-foreground">
                   <div class="flex flex-col items-center justify-center gap-2">
                     <FileText class="h-8 w-8 text-muted-foreground/30" />
                     <p class="text-sm font-medium">{{ t('adminDashboard.noReports') }}</p>
@@ -651,6 +761,30 @@ async function handleStatusSave() {
         <div v-if="selectedPhoto" class="flex max-h-[70vh] items-center justify-center overflow-hidden rounded-lg bg-muted/20 p-2">
           <img :src="selectedPhoto" :alt="selectedPhotoTitle" class="max-h-[65vh] w-auto object-contain rounded" />
         </div>
+      </DialogContent>
+    </Dialog>
+
+    <!-- Delete Report Confirmation Dialog -->
+    <Dialog v-model:open="deleteDialogOpen">
+      <DialogContent class="max-w-md">
+        <DialogHeader>
+          <DialogTitle>{{ t('adminReports.deleteTitle', { id: reportToDelete?.id }) }}</DialogTitle>
+          <DialogDescription>
+            {{ t('adminReports.deleteDesc') }}
+          </DialogDescription>
+        </DialogHeader>
+        <div v-if="reportToDelete" class="rounded-lg border bg-muted/40 p-3 text-sm">
+          <p class="font-medium text-foreground">{{ reportToDelete.title }}</p>
+          <p class="mt-0.5 text-xs text-muted-foreground">{{ reportToDelete.location_text }}</p>
+        </div>
+        <DialogFooter>
+          <Button variant="outline" size="sm" :disabled="deleting" @click="deleteDialogOpen = false">
+            {{ t('common.cancel') }}
+          </Button>
+          <Button variant="destructive" size="sm" :disabled="deleting" @click="handleDeleteReport">
+            {{ deleting ? t('adminReports.deleting') : t('adminReports.confirmDelete') }}
+          </Button>
+        </DialogFooter>
       </DialogContent>
     </Dialog>
   </div>

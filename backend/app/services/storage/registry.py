@@ -7,6 +7,7 @@ from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 from dataclasses import dataclass
 from pathlib import Path
+from urllib.parse import urlparse
 from fastapi import HTTPException, UploadFile, status
 from PIL import Image, features
 from sqlalchemy.orm import Session
@@ -176,3 +177,31 @@ async def store_report_photos(files: list[UploadFile], db: Session) -> AsyncIter
             except Exception:
                 logger.warning("Could not remove failed report upload %s from %s", public_id, provider.metadata.id)
         raise
+
+
+def delete_report_photos(photo_urls: list[str], db: Session) -> None:
+    """Best-effort cleanup of stored report photos from the configured storage provider."""
+    if not photo_urls:
+        return
+
+    resolved = resolve_settings(db)
+    active_provider = build_storage_provider(resolved)
+    local_provider = LocalStorageProvider(upload_dir=settings.UPLOAD_DIR)
+
+    for url in photo_urls:
+        if not url:
+            continue
+        parsed_path = urlparse(url).path
+        filename = Path(parsed_path).name
+        if "." not in filename:
+            continue
+        public_id = Path(filename).stem
+        extension = Path(filename).suffix.lstrip(".").lower()
+        if not public_id or not extension:
+            continue
+
+        target_provider = local_provider if url.startswith("/uploads/") else active_provider
+        try:
+            target_provider.delete(public_id, extension)
+        except Exception:
+            logger.warning("Could not delete report photo %s from %s", url, target_provider.metadata.id)

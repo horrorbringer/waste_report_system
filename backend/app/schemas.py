@@ -169,6 +169,20 @@ class ReportDetailResponse(ReportResponse):
     public_province: ProvinceCode | None = None
 
 
+class BulkStatusRequest(BaseModel):
+    report_ids: list[int] = Field(..., min_length=1, max_length=200)
+    status: ReportStatus
+    note: str | None = Field(default=None, max_length=1000)
+
+
+class BulkDeleteRequest(BaseModel):
+    report_ids: list[int] = Field(..., min_length=1, max_length=200)
+
+
+class BulkActionResponse(BaseModel):
+    affected: int
+
+
 class PublicStatsResponse(BaseModel):
     total_reports: int
     pending_reports: int

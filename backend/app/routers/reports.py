@@ -8,6 +8,9 @@ from app.database import get_db
 from app.deps import get_current_user, require_admin, require_resident_or_admin
 from app.models import Category, StatusHistory, User, WasteReport
 from app.schemas import (
+    BulkActionResponse,
+    BulkDeleteRequest,
+    BulkStatusRequest,
     CommunityReport,
     CommunityReportsPage,
     DistrictCode,
@@ -18,7 +21,7 @@ from app.schemas import (
     ReportUploadPolicy,
 )
 from app.services.settings_service import resolve_settings
-from app.services.storage.registry import report_upload_policy, store_report_photos
+from app.services.storage.registry import delete_report_photos, report_upload_policy, store_report_photos
 from app.utils import serialize_report, serialize_report_detail
 
 router = APIRouter(prefix="/api/reports", tags=["Reports"])
@@ -468,6 +471,57 @@ def delete_report(
                 detail="Only pending reports can be deleted by the owner.",
             )
 
+    photo_urls = list(report.photo_paths or ([report.photo_path] if report.photo_path else []))
     db.delete(report)
     db.commit()
+    delete_report_photos(photo_urls, db)
     return Response(status_code=status.HTTP_204_NO_CONTENT)
+
+
+@router.post("/bulk-status", response_model=BulkActionResponse)
+def bulk_update_report_status(
+    payload: BulkStatusRequest,
+    db: Session = Depends(get_db),
+    admin_user: User = Depends(require_admin),
+) -> BulkActionResponse:
+    reports = db.scalars(select(WasteReport).where(WasteReport.id.in_(payload.report_ids))).all()
+    if not reports:
+        return BulkActionResponse(affected=0)
+
+    now = datetime.now(timezone.utc)
+    clean_note = payload.note.strip() if payload.note else None
+    for report in reports:
+        old_status = report.status
+        report.status = payload.status
+        report.updated_at = now
+        db.add(
+            StatusHistory(
+                report_id=report.id,
+                changed_by=admin_user.id,
+                old_status=old_status,
+                new_status=payload.status,
+                note=clean_note,
+            )
+        )
+    db.commit()
+    return BulkActionResponse(affected=len(reports))
+
+
+@router.post("/bulk-delete", response_model=BulkActionResponse)
+def bulk_delete_reports(
+    payload: BulkDeleteRequest,
+    db: Session = Depends(get_db),
+    _: User = Depends(require_admin),
+) -> BulkActionResponse:
+    reports = db.scalars(select(WasteReport).where(WasteReport.id.in_(payload.report_ids))).all()
+    if not reports:
+        return BulkActionResponse(affected=0)
+
+    photo_urls: list[str] = []
+    for report in reports:
+        photo_urls.extend(report.photo_paths or ([report.photo_path] if report.photo_path else []))
+        db.delete(report)
+
+    db.commit()
+    delete_report_photos(photo_urls, db)
+    return BulkActionResponse(affected=len(reports))

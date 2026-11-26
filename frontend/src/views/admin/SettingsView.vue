@@ -34,6 +34,7 @@ import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { Switch } from '@/components/ui/switch'
+import { Skeleton } from '@/components/ui/skeleton'
 
 const { t, locale } = useI18n()
 const settingsStore = useSettingsStore()
@@ -145,15 +146,20 @@ const isDirty = computed(() => {
   if (form.site_name !== s.general.site_name) return true
   if (form.allow_registration !== s.general.allow_registration) return true
   if (form.provider !== s.storage.provider) return true
-  if (form.max_file_size_mb !== s.storage.max_file_size_mb) return true
-  if (form.allowed_extensions.length !== s.storage.allowed_extensions.length) return true
+  if (Number(form.max_file_size_mb) !== s.storage.max_file_size_mb) return true
+  const sortedFormExt = [...form.allowed_extensions].sort().join(',')
+  const sortedOrigExt = [...s.storage.allowed_extensions].sort().join(',')
+  if (sortedFormExt !== sortedOrigExt) return true
   if (form.cloudinary.cloud_name !== s.storage.cloudinary.cloud_name) return true
   if (form.cloudinary.api_key !== s.storage.cloudinary.api_key) return true
   if (form.cloudinary.folder !== s.storage.cloudinary.folder) return true
   if (form.cloudinary.api_secret !== '') return true
   if (form.s3.endpoint_url !== s.storage.s3.endpoint_url) return true
+  if (form.s3.region !== s.storage.s3.region) return true
   if (form.s3.bucket !== s.storage.s3.bucket) return true
   if (form.s3.access_key_id !== s.storage.s3.access_key_id) return true
+  if (form.s3.public_base_url !== s.storage.s3.public_base_url) return true
+  if (form.s3.folder !== s.storage.s3.folder) return true
   if (form.s3.secret_access_key !== '') return true
   return false
 })
@@ -213,23 +219,12 @@ async function handleTestConnection() {
 
 <template>
   <div class="space-y-6 max-w-6xl pb-16">
-    <!-- Standard Header with Status Badges & Quick Save -->
-    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b pb-5">
+    <!-- Standard Header with Quick Save -->
+    <div class="flex flex-col gap-4 border-b pb-5 sm:flex-row sm:items-end sm:justify-between">
       <div>
-        <div class="flex items-center gap-2 mb-1.5">
-          <Badge variant="outline" class="gap-1.5 border-primary/30 text-primary text-xs font-semibold">
-            <ShieldCheck class="h-3.5 w-3.5" />
-            {{ t('adminSettings.eyebrow') }}
-          </Badge>
-          <Badge variant="secondary" class="font-mono text-[11px] gap-1">
-            <Lock class="h-3 w-3 text-muted-foreground" />
-            AES-128 Encrypted
-          </Badge>
-        </div>
-        <h1 class="text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
-          {{ t('adminSettings.title') }}
-        </h1>
-        <p class="mt-1 text-sm text-muted-foreground max-w-2xl leading-relaxed">
+        <p class="text-eyebrow mb-1">{{ t('adminSettings.eyebrow') }}</p>
+        <h2 class="heading-page">{{ t('adminSettings.title') }}</h2>
+        <p class="mt-1 max-w-2xl text-sm leading-relaxed text-muted-foreground">
           {{ t('adminSettings.subtitle') }}
         </p>
       </div>
@@ -247,8 +242,8 @@ async function handleTestConnection() {
         </Button>
         <Button
           :disabled="settingsStore.saving"
-          size="default"
-          class="gap-2 shadow-sm font-semibold min-w-32"
+          size="sm"
+          class="h-9 min-w-28 gap-2 font-semibold shadow-sm"
           @click="handleSave"
         >
           <Loader2 v-if="settingsStore.saving" class="h-4 w-4 animate-spin" />
@@ -273,77 +268,104 @@ async function handleTestConnection() {
       </Alert>
     </Transition>
 
-    <!-- Standard Segmented Tab Navigation -->
-    <div class="flex flex-wrap items-center gap-1.5 rounded-xl border bg-muted/40 p-1 text-xs">
-      <button
-        type="button"
-        class="flex items-center gap-2 rounded-lg px-3.5 py-2 font-medium transition"
-        :class="
-          activeTab === 'storage'
-            ? 'bg-background text-foreground shadow-xs font-semibold'
-            : 'text-muted-foreground hover:text-foreground'
-        "
-        @click="activeTab = 'storage'"
+    <!-- 2-Column Standard Settings Layout -->
+    <div class="grid items-start gap-6 lg:grid-cols-[14rem_minmax(0,1fr)]">
+      <!-- Left Vertical Settings Navigation (Horizontal on Mobile) -->
+      <nav
+        class="flex gap-1 overflow-x-auto rounded-xl border bg-card p-1.5 shadow-2xs lg:sticky lg:top-24 lg:flex-col lg:p-2"
+        aria-label="Settings sections"
       >
-        <HardDrive class="h-4 w-4 text-primary" />
-        <span>{{ t('adminSettings.tabStorage') }}</span>
-        <Badge variant="outline" class="ml-1 text-[10px] font-mono capitalize">
-          {{ form.provider }}
-        </Badge>
-      </button>
+        <button
+          type="button"
+          class="flex shrink-0 items-center justify-between gap-2 rounded-lg px-3 py-2 text-xs font-medium transition-colors"
+          :class="
+            activeTab === 'storage'
+              ? 'bg-primary text-primary-foreground shadow-xs'
+              : 'text-muted-foreground hover:bg-muted hover:text-foreground'
+          "
+          @click="activeTab = 'storage'"
+        >
+          <span class="flex items-center gap-2">
+            <HardDrive class="h-4 w-4 shrink-0" />
+            <span>{{ t('adminSettings.tabStorage') }}</span>
+          </span>
+          <span
+            class="hidden rounded px-1.5 py-0.5 font-mono text-[10px] capitalize lg:inline-block"
+            :class="activeTab === 'storage' ? 'bg-primary-foreground/20 text-primary-foreground' : 'bg-muted text-muted-foreground'"
+          >
+            {{ form.provider === 's3_compatible' ? 'S3' : form.provider }}
+          </span>
+        </button>
 
-      <button
-        type="button"
-        class="flex items-center gap-2 rounded-lg px-3.5 py-2 font-medium transition"
-        :class="
-          activeTab === 'policy'
-            ? 'bg-background text-foreground shadow-xs font-semibold'
-            : 'text-muted-foreground hover:text-foreground'
-        "
-        @click="activeTab = 'policy'"
-      >
-        <SlidersHorizontal class="h-4 w-4 text-primary" />
-        <span>{{ t('adminSettings.tabPolicy') }}</span>
-        <span class="text-[11px] text-muted-foreground">({{ form.max_file_size_mb }}MB)</span>
-      </button>
+        <button
+          type="button"
+          class="flex shrink-0 items-center justify-between gap-2 rounded-lg px-3 py-2 text-xs font-medium transition-colors"
+          :class="
+            activeTab === 'policy'
+              ? 'bg-primary text-primary-foreground shadow-xs'
+              : 'text-muted-foreground hover:bg-muted hover:text-foreground'
+          "
+          @click="activeTab = 'policy'"
+        >
+          <span class="flex items-center gap-2">
+            <SlidersHorizontal class="h-4 w-4 shrink-0" />
+            <span>{{ t('adminSettings.tabPolicy') }}</span>
+          </span>
+          <span
+            class="hidden rounded px-1.5 py-0.5 font-mono text-[10px] tabular-nums lg:inline-block"
+            :class="activeTab === 'policy' ? 'bg-primary-foreground/20 text-primary-foreground' : 'bg-muted text-muted-foreground'"
+          >
+            {{ form.max_file_size_mb }}MB
+          </span>
+        </button>
 
-      <button
-        type="button"
-        class="flex items-center gap-2 rounded-lg px-3.5 py-2 font-medium transition"
-        :class="
-          activeTab === 'platform'
-            ? 'bg-background text-foreground shadow-xs font-semibold'
-            : 'text-muted-foreground hover:text-foreground'
-        "
-        @click="activeTab = 'platform'"
-      >
-        <Globe class="h-4 w-4 text-primary" />
-        <span>{{ t('adminSettings.tabPlatform') }}</span>
-      </button>
+        <button
+          type="button"
+          class="flex shrink-0 items-center gap-2 rounded-lg px-3 py-2 text-xs font-medium transition-colors"
+          :class="
+            activeTab === 'platform'
+              ? 'bg-primary text-primary-foreground shadow-xs'
+              : 'text-muted-foreground hover:bg-muted hover:text-foreground'
+          "
+          @click="activeTab = 'platform'"
+        >
+          <Globe class="h-4 w-4 shrink-0" />
+          <span>{{ t('adminSettings.tabPlatform') }}</span>
+        </button>
 
-      <button
-        type="button"
-        class="flex items-center gap-2 rounded-lg px-3.5 py-2 font-medium transition"
-        :class="
-          activeTab === 'system'
-            ? 'bg-background text-foreground shadow-xs font-semibold'
-            : 'text-muted-foreground hover:text-foreground'
-        "
-        @click="activeTab = 'system'"
-      >
-        <Server class="h-4 w-4 text-primary" />
-        <span>{{ t('adminSettings.tabSystem') }}</span>
-      </button>
-    </div>
+        <button
+          type="button"
+          class="flex shrink-0 items-center gap-2 rounded-lg px-3 py-2 text-xs font-medium transition-colors"
+          :class="
+            activeTab === 'system'
+              ? 'bg-primary text-primary-foreground shadow-xs'
+              : 'text-muted-foreground hover:bg-muted hover:text-foreground'
+          "
+          @click="activeTab = 'system'"
+        >
+          <Server class="h-4 w-4 shrink-0" />
+          <span>{{ t('adminSettings.tabSystem') }}</span>
+        </button>
+      </nav>
 
-    <!-- Loading Skeleton -->
-    <div v-if="settingsStore.loading && !settingsStore.settings" class="space-y-4">
-      <div class="h-64 animate-pulse rounded-xl bg-muted/40" />
-      <div class="h-48 animate-pulse rounded-xl bg-muted/30" />
-    </div>
+      <!-- Right Settings Content Column -->
+      <div class="min-w-0 space-y-6">
+        <!-- Loading Skeleton -->
+        <div v-if="settingsStore.loading && !settingsStore.settings" class="space-y-4">
+          <Card class="p-6 space-y-5">
+            <div class="space-y-2">
+              <Skeleton class="h-5 w-48" />
+              <Skeleton class="h-3.5 w-80" />
+            </div>
+            <div class="grid gap-3.5 sm:grid-cols-3">
+              <Skeleton v-for="n in 3" :key="n" class="h-36 rounded-xl" />
+            </div>
+            <Skeleton class="h-44 rounded-xl" />
+          </Card>
+        </div>
 
-    <!-- Main Tab Content Panes -->
-    <div v-else class="space-y-6">
+        <!-- Main Tab Content Panes -->
+        <div v-else class="space-y-6">
       <!-- ================= TAB 1: STORAGE & CDN ================= -->
       <div v-show="activeTab === 'storage'" class="space-y-6">
         <!-- 1. Active Provider Selector Card -->
@@ -862,6 +884,8 @@ async function handleTestConnection() {
             </div>
           </CardContent>
         </Card>
+      </div>
+    </div>
       </div>
     </div>
 

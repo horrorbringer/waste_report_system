@@ -159,6 +159,28 @@ export const useReportStore = defineStore('reports', () => {
     }
   }
 
+  async function bulkUpdateStatus(reportIds: number[], status: ReportStatus, note?: string) {
+    const { data } = await api.post<{ affected: number }>('/reports/bulk-status', {
+      report_ids: reportIds,
+      status,
+      note: note?.trim() || null,
+    })
+    return data.affected
+  }
+
+  async function bulkDeleteReports(reportIds: number[]) {
+    const { data } = await api.post<{ affected: number }>('/reports/bulk-delete', {
+      report_ids: reportIds,
+    })
+    const idSet = new Set(reportIds)
+    allReports.value = allReports.value.filter((r) => !idSet.has(r.id))
+    myReports.value = myReports.value.filter((r) => !idSet.has(r.id))
+    if (currentReport.value && idSet.has(currentReport.value.id)) {
+      currentReport.value = null
+    }
+    return data.affected
+  }
+
   async function fetchAdminStats() {
     loading.value = true
     try {
@@ -190,6 +212,8 @@ export const useReportStore = defineStore('reports', () => {
     updateReportStatus,
     setReportPublication,
     deleteReport,
+    bulkUpdateStatus,
+    bulkDeleteReports,
     fetchAdminStats,
   }
 })
