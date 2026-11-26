@@ -32,45 +32,175 @@ def list_report_areas() -> list[Province]:
     return provinces
 
 
+def _serialize_community_report(
+    row: tuple,
+    latest_notes: dict[int, str],
+) -> CommunityReport:
+    (
+        report_id,
+        title,
+        description,
+        photo_path,
+        photo_paths,
+        category_id,
+        category_name,
+        category_name_km,
+        province_code,
+        district_code,
+        latitude,
+        longitude,
+        created_at,
+        report_status,
+    ) = row
+    if created_at.tzinfo is None:
+        created_at = created_at.replace(tzinfo=timezone.utc)
+    province = provinces_by_code[province_code or district_code // 100]
+    district = districts_by_code.get(district_code) if district_code is not None else None
+    resolved_photos = photo_paths or ([photo_path] if photo_path else [])
+    return CommunityReport(
+        id=report_id,
+        title=title,
+        description=description,
+        photo_path=photo_path,
+        photo_paths=resolved_photos,
+        category_id=category_id,
+        category_name=category_name,
+        category_name_km=category_name_km,
+        province=province["code"],
+        province_name=province["name"],
+        province_name_km=province["name_km"],
+        district=district_code,
+        district_name=district["name"] if district else None,
+        district_name_km=district["name_km"] if district else None,
+        latitude=latitude,
+        longitude=longitude,
+        reported_on=created_at.astimezone(PHNOM_PENH_TIMEZONE).date(),
+        status=report_status,
+        resolution_note=latest_notes.get(report_id),
+    )
+
+
+def _fetch_latest_notes(db: Session, report_ids: list[int]) -> dict[int, str]:
+    if not report_ids:
+        return {}
+    rows = db.execute(
+        select(StatusHistory.report_id, StatusHistory.note)
+        .where(
+            StatusHistory.report_id.in_(report_ids),
+            StatusHistory.note.is_not(None),
+            StatusHistory.note != "",
+        )
+        .order_by(StatusHistory.changed_at.desc(), StatusHistory.id.desc())
+    ).all()
+    notes: dict[int, str] = {}
+    for rid, note in rows:
+        if rid not in notes and note:
+            notes[rid] = note
+    return notes
+
+
 @router.get("/community", response_model=CommunityReportsPage)
 def list_community_reports(
     response: Response,
     db: Session = Depends(get_db),
     limit: int = Query(default=20, ge=1, le=100),
     offset: int = Query(default=0, ge=0),
+    q: str | None = Query(default=None, max_length=100),
+    status_filter: str | None = Query(default=None, alias="status"),
+    category_id: int | None = Query(default=None),
+    province: int | None = Query(default=None),
+    sort: str = Query(default="newest"),
 ) -> CommunityReportsPage:
     response.headers["Cache-Control"] = "no-store"
-    reports = db.execute(
+    stmt = (
         select(
-            Category.name, Category.name_km, WasteReport.public_province, WasteReport.public_district,
-            WasteReport.created_at, WasteReport.status,
+            WasteReport.id,
+            WasteReport.title,
+            WasteReport.description,
+            WasteReport.photo_path,
+            WasteReport.photo_paths,
+            Category.id,
+            Category.name,
+            Category.name_km,
+            WasteReport.public_province,
+            WasteReport.public_district,
+            WasteReport.latitude,
+            WasteReport.longitude,
+            WasteReport.created_at,
+            WasteReport.status,
         )
         .join(WasteReport, WasteReport.category_id == Category.id)
         .where(or_(WasteReport.public_province.is_not(None), WasteReport.public_district.is_not(None)))
-        .order_by(WasteReport.created_at.desc(), WasteReport.id.desc())
-        .offset(offset)
-        .limit(limit + 1)
-    ).all()
+    )
 
-    items = []
-    for category_name, category_name_km, province_code, district_code, created_at, report_status in reports[:limit]:
-        if created_at.tzinfo is None:
-            created_at = created_at.replace(tzinfo=timezone.utc)
-        province = provinces_by_code[province_code or district_code // 100]
-        district = districts_by_code.get(district_code) if district_code is not None else None
-        items.append(CommunityReport(
-            category_name=category_name,
-            category_name_km=category_name_km,
-            province=province["code"],
-            province_name=province["name"],
-            province_name_km=province["name_km"],
-            district=district_code,
-            district_name=district["name"] if district else None,
-            district_name_km=district["name_km"] if district else None,
-            reported_on=created_at.astimezone(PHNOM_PENH_TIMEZONE).date(),
-            status=report_status,
-        ))
+    if status_filter and status_filter in VALID_STATUSES:
+        stmt = stmt.where(WasteReport.status == status_filter)
+    if category_id is not None:
+        stmt = stmt.where(WasteReport.category_id == category_id)
+    if province is not None:
+        stmt = stmt.where(
+            or_(
+                WasteReport.public_province == province,
+                WasteReport.public_district.between(province * 100, province * 100 + 99),
+            )
+        )
+    if q and q.strip():
+        pattern = f"%{q.strip()}%"
+        stmt = stmt.where(
+            or_(
+                WasteReport.title.ilike(pattern),
+                WasteReport.description.ilike(pattern),
+                Category.name.ilike(pattern),
+                Category.name_km.ilike(pattern),
+            )
+        )
+
+    if sort == "oldest":
+        stmt = stmt.order_by(WasteReport.created_at.asc(), WasteReport.id.asc())
+    else:
+        stmt = stmt.order_by(WasteReport.created_at.desc(), WasteReport.id.desc())
+
+    reports = db.execute(stmt.offset(offset).limit(limit + 1)).all()
+    page_rows = reports[:limit]
+    latest_notes = _fetch_latest_notes(db, [row[0] for row in page_rows])
+    items = [_serialize_community_report(row, latest_notes) for row in page_rows]
     return CommunityReportsPage(items=items, has_more=len(reports) > limit)
+
+
+@router.get("/community/{report_id}", response_model=CommunityReport)
+def get_community_report(
+    report_id: int,
+    response: Response,
+    db: Session = Depends(get_db),
+) -> CommunityReport:
+    response.headers["Cache-Control"] = "no-store"
+    row = db.execute(
+        select(
+            WasteReport.id,
+            WasteReport.title,
+            WasteReport.description,
+            WasteReport.photo_path,
+            WasteReport.photo_paths,
+            Category.id,
+            Category.name,
+            Category.name_km,
+            WasteReport.public_province,
+            WasteReport.public_district,
+            WasteReport.latitude,
+            WasteReport.longitude,
+            WasteReport.created_at,
+            WasteReport.status,
+        )
+        .join(WasteReport, WasteReport.category_id == Category.id)
+        .where(
+            WasteReport.id == report_id,
+            or_(WasteReport.public_province.is_not(None), WasteReport.public_district.is_not(None)),
+        )
+    ).first()
+    if not row:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Published report not found.")
+    latest_notes = _fetch_latest_notes(db, [report_id])
+    return _serialize_community_report(row, latest_notes)
 
 
 @router.get("/upload-policy", response_model=ReportUploadPolicy)

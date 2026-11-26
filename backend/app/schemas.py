@@ -114,6 +114,12 @@ class ReportPublication(BaseModel):
 
 
 class CommunityReport(BaseModel):
+    id: int
+    title: str
+    description: str
+    photo_path: str | None = None
+    photo_paths: list[str] = []
+    category_id: int
     category_name: str
     category_name_km: str | None
     province: ProvinceCode
@@ -122,8 +128,11 @@ class CommunityReport(BaseModel):
     district: DistrictCode | None
     district_name: str | None
     district_name_km: str | None
+    latitude: float | None = None
+    longitude: float | None = None
     reported_on: date
     status: ReportStatus
+    resolution_note: str | None = None
 
 
 class CommunityReportsPage(BaseModel):

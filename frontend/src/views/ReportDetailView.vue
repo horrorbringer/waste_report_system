@@ -529,20 +529,59 @@ async function handleStatusSave() {
               <CardContent>
                 <!-- Photo Container -->
                 <div v-if="selectedPhotoUrl" class="space-y-3">
-                  <button
-                    type="button"
-                    class="flex w-full cursor-zoom-in items-center justify-center overflow-hidden rounded-xl border bg-black/5 p-2 dark:bg-black/20"
-                    :aria-label="t('detail.viewFullscreen')"
-                    @click="zoomModalOpen = true"
-                  >
-                    <img :src="selectedPhotoUrl" :alt="selectedPhotoAlt" class="max-h-[480px] max-w-full rounded-lg object-contain" loading="lazy" />
-                  </button>
-                  <div v-if="photoPaths.length > 1" class="flex flex-wrap items-center gap-2" role="group" :aria-label="t('detail.attachedPhotos')">
+                  <div class="group relative flex h-[320px] w-full items-center justify-center overflow-hidden rounded-xl border bg-zinc-950/95 sm:h-[420px]">
+                    <button
+                      type="button"
+                      class="flex h-full w-full cursor-zoom-in items-center justify-center p-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                      :aria-label="t('detail.viewFullscreen')"
+                      @click="zoomModalOpen = true"
+                    >
+                      <img :src="selectedPhotoUrl" :alt="selectedPhotoAlt" class="max-h-full max-w-full rounded-lg object-contain" loading="lazy" />
+                    </button>
+
+                    <!-- Photo Counter Pill -->
+                    <span
+                      v-if="photoPaths.length > 1"
+                      class="pointer-events-none absolute right-3 top-3 rounded-md bg-black/65 px-2.5 py-1 text-xs font-medium tabular-nums text-white backdrop-blur-xs"
+                    >
+                      {{ activePhotoIndex + 1 }} / {{ photoPaths.length }}
+                    </span>
+
+                    <!-- Inline Prev / Next Controls -->
+                    <template v-if="photoPaths.length > 1">
+                      <Button
+                        type="button"
+                        variant="secondary"
+                        size="icon"
+                        class="absolute left-3 top-1/2 h-9 w-9 -translate-y-1/2 rounded-full bg-black/60 text-white shadow-sm backdrop-blur-xs transition hover:bg-black/80 disabled:opacity-30"
+                        :disabled="activePhotoIndex === 0"
+                        :aria-label="t('detail.previousPhoto')"
+                        @click.stop="activePhotoIndex--"
+                      >
+                        <ChevronLeft class="h-4 w-4" />
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="secondary"
+                        size="icon"
+                        class="absolute right-3 top-1/2 h-9 w-9 -translate-y-1/2 rounded-full bg-black/60 text-white shadow-sm backdrop-blur-xs transition hover:bg-black/80 disabled:opacity-30"
+                        :disabled="activePhotoIndex === photoPaths.length - 1"
+                        :aria-label="t('detail.nextPhoto')"
+                        @click.stop="activePhotoIndex++"
+                      >
+                        <ChevronRight class="h-4 w-4" />
+                      </Button>
+                    </template>
+                  </div>
+
+                  <!-- Scrollable Thumbnail Strip -->
+                  <div v-if="photoPaths.length > 1" class="flex gap-2 overflow-x-auto pb-1" role="group" :aria-label="t('detail.attachedPhotos')">
                     <button
                       v-for="(path, index) in photoPaths"
                       :key="path"
                       type="button"
-                      class="h-14 w-16 overflow-hidden rounded-lg border-2 bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring aria-pressed:border-primary"
+                      class="h-14 w-20 shrink-0 overflow-hidden rounded-lg border-2 bg-muted transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                      :class="index === activePhotoIndex ? 'border-primary ring-1 ring-primary' : 'border-transparent opacity-60 hover:opacity-100'"
                       :aria-label="t('detail.showGalleryPhoto', { index: index + 1 })"
                       :aria-pressed="index === activePhotoIndex"
                       @click="activePhotoIndex = index"

@@ -24,7 +24,7 @@ const forwarded = useForwardPropsEmits(props, emits)
       v-bind="forwarded"
       :class="
         cn(
-          'relative z-50 max-h-96 min-w-[8rem] overflow-hidden rounded-md border bg-popover text-popover-foreground shadow-md',
+          'relative z-[1100] max-h-96 min-w-[8rem] overflow-hidden rounded-md border bg-popover text-popover-foreground shadow-md',
           position === 'popper' && 'translate-y-1',
           props.class
         )

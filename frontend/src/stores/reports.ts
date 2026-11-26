@@ -3,6 +3,7 @@ import { ref } from 'vue'
 import api from '@/services/api'
 import type {
   AdminDashboardStats,
+  CommunityReport,
   CommunityReportsPage,
   ReportProvince,
   PublicStats,
@@ -28,8 +29,31 @@ export const useReportStore = defineStore('reports', () => {
     return data
   }
 
-  async function fetchCommunityReports(limit: number, offset: number) {
-    const { data } = await api.get<CommunityReportsPage>('/reports/community', { params: { limit, offset } })
+  async function fetchCommunityReports(params: {
+    limit?: number
+    offset?: number
+    q?: string
+    status?: string
+    category_id?: number | string
+    province?: number | string
+    sort?: 'newest' | 'oldest'
+  }) {
+    const cleanParams: Record<string, string | number> = {
+      limit: params.limit ?? 20,
+      offset: params.offset ?? 0,
+    }
+    if (params.q?.trim()) cleanParams.q = params.q.trim()
+    if (params.status && params.status !== 'ALL') cleanParams.status = params.status
+    if (params.category_id && params.category_id !== 'ALL') cleanParams.category_id = Number(params.category_id)
+    if (params.province && params.province !== 'ALL') cleanParams.province = Number(params.province)
+    if (params.sort) cleanParams.sort = params.sort
+
+    const { data } = await api.get<CommunityReportsPage>('/reports/community', { params: cleanParams })
+    return data
+  }
+
+  async function fetchCommunityReportById(id: number) {
+    const { data } = await api.get<CommunityReport>(`/reports/community/${id}`)
     return data
   }
 
@@ -147,6 +171,7 @@ export const useReportStore = defineStore('reports', () => {
     loading,
     fetchPublicStats,
     fetchCommunityReports,
+    fetchCommunityReportById,
     fetchReportAreas,
     fetchMyReports,
     fetchAllReports,

@@ -82,6 +82,12 @@ export interface ReportProvince extends ReportArea {
 }
 
 export interface CommunityReport {
+  id: number
+  title: string
+  description: string
+  photo_path: string | null
+  photo_paths: string[]
+  category_id: number
   category_name: string
   category_name_km: string | null
   province: number
@@ -90,8 +96,11 @@ export interface CommunityReport {
   district: number | null
   district_name: string | null
   district_name_km: string | null
+  latitude: number | null
+  longitude: number | null
   reported_on: string
   status: ReportStatus
+  resolution_note: string | null
 }
 
 export interface CommunityReportsPage {
