@@ -15,6 +15,7 @@ import {
   Menu,
   X,
   ShieldCheck,
+  ExternalLink,
 } from 'lucide-vue-next'
 import { useAuthStore } from '@/stores/auth'
 import LanguageSwitcher from '@/components/LanguageSwitcher.vue'
@@ -106,20 +107,26 @@ function handleLogout() {
             {{ t('nav.portalShortcuts') }}
           </p>
           <nav class="space-y-1">
-            <RouterLink
-              to="/my-reports"
-              class="flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+            <a
+              href="/my-reports"
+              target="_blank"
+              rel="noopener noreferrer"
+              class="group flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
             >
               <ClipboardList class="h-4 w-4 shrink-0" />
-              <span>{{ t('nav.myReports') }}</span>
-            </RouterLink>
-            <RouterLink
-              to="/"
-              class="flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+              <span class="flex-1 truncate">{{ t('nav.myReports') }}</span>
+              <ExternalLink class="h-3.5 w-3.5 shrink-0 opacity-60 transition-opacity group-hover:opacity-100" />
+            </a>
+            <a
+              href="/"
+              target="_blank"
+              rel="noopener noreferrer"
+              class="group flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
             >
               <Home class="h-4 w-4 shrink-0" />
-              <span>{{ t('nav.publicSite') }}</span>
-            </RouterLink>
+              <span class="flex-1 truncate">{{ t('nav.publicSite') }}</span>
+              <ExternalLink class="h-3.5 w-3.5 shrink-0 opacity-60 transition-opacity group-hover:opacity-100" />
+            </a>
           </nav>
         </div>
       </div>
@@ -175,14 +182,28 @@ function handleLogout() {
             <component :is="item.icon" class="h-4 w-4" />
             {{ item.label }}
           </RouterLink>
-          <RouterLink
-            to="/"
+          <a
+            href="/my-reports"
+            target="_blank"
+            rel="noopener noreferrer"
+            class="flex items-center gap-2.5 rounded-md px-3 py-2 text-sm font-medium text-muted-foreground"
+            @click="mobileMenuOpen = false"
+          >
+            <ClipboardList class="h-4 w-4" />
+            <span class="flex-1">{{ t('nav.myReports') }}</span>
+            <ExternalLink class="h-3.5 w-3.5 opacity-60" />
+          </a>
+          <a
+            href="/"
+            target="_blank"
+            rel="noopener noreferrer"
             class="flex items-center gap-2.5 rounded-md px-3 py-2 text-sm font-medium text-muted-foreground"
             @click="mobileMenuOpen = false"
           >
             <Home class="h-4 w-4" />
-            {{ t('nav.publicSite') }}
-          </RouterLink>
+            <span class="flex-1">{{ t('nav.publicSite') }}</span>
+            <ExternalLink class="h-3.5 w-3.5 opacity-60" />
+          </a>
           <Button variant="outline" size="sm" class="mt-2 w-full" @click="handleLogout">
             <LogOut class="h-4 w-4" />
             {{ t('nav.signOut') }}
