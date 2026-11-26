@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { onMounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { Search, Edit3, Eye, CheckCircle2, AlertCircle, FilterX } from 'lucide-vue-next'
+import { Search, Edit3, Eye, CheckCircle2, AlertCircle, FilterX, Trash2 } from 'lucide-vue-next'
 import StatusBadge from '@/components/StatusBadge.vue'
 import { useReportStore } from '@/stores/reports'
 import { useCategoryStore } from '@/stores/categories'
@@ -55,6 +55,11 @@ const note = ref('')
 const saving = ref(false)
 const successMsg = ref('')
 const errorMsg = ref('')
+
+// Delete confirmation dialog state
+const deleteDialogOpen = ref(false)
+const reportToDelete = ref<WasteReport | null>(null)
+const deleting = ref(false)
 
 async function loadReports() {
   await reportStore.fetchAllReports({
@@ -110,6 +115,30 @@ async function handleStatusUpdate() {
     errorMsg.value = err.response?.data?.detail || t('adminReports.errUpdateFailed')
   } finally {
     saving.value = false
+  }
+}
+
+function openDeleteModal(report: WasteReport) {
+  reportToDelete.value = report
+  errorMsg.value = ''
+  deleteDialogOpen.value = true
+}
+
+async function handleDeleteReport() {
+  if (!reportToDelete.value) return
+  deleting.value = true
+  errorMsg.value = ''
+  successMsg.value = ''
+  const targetId = reportToDelete.value.id
+  try {
+    await reportStore.deleteReport(targetId)
+    successMsg.value = t('adminReports.deletedSuccess', { id: targetId })
+    deleteDialogOpen.value = false
+    reportToDelete.value = null
+  } catch (err: any) {
+    errorMsg.value = err.response?.data?.detail || t('adminReports.errDeleteFailed')
+  } finally {
+    deleting.value = false
   }
 }
 </script>
@@ -248,6 +277,15 @@ async function handleStatusUpdate() {
                     <Edit3 class="h-3.5 w-3.5" />
                     {{ t('adminReports.statusBtn') }}
                   </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    class="px-2 text-destructive hover:bg-destructive/10 hover:text-destructive"
+                    :aria-label="t('adminReports.deleteBtn')"
+                    @click="openDeleteModal(report)"
+                  >
+                    <Trash2 class="h-3.5 w-3.5" />
+                  </Button>
                 </div>
               </TableCell>
             </TableRow>
@@ -302,6 +340,32 @@ async function handleStatusUpdate() {
           <Button variant="outline" @click="dialogOpen = false">{{ t('common.cancel') }}</Button>
           <Button :disabled="saving" @click="handleStatusUpdate">
             {{ saving ? t('adminReports.updating') : t('adminReports.saveUpdate') }}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+
+    <!-- Delete Report Confirmation Dialog -->
+    <Dialog v-model:open="deleteDialogOpen">
+      <DialogContent class="max-w-md">
+        <DialogHeader>
+          <DialogTitle>{{ t('adminReports.deleteTitle', { id: reportToDelete?.id }) }}</DialogTitle>
+          <DialogDescription>
+            {{ t('adminReports.deleteDesc') }}
+          </DialogDescription>
+        </DialogHeader>
+
+        <div v-if="reportToDelete" class="rounded-lg border bg-muted/40 p-3 text-sm">
+          <p class="font-medium text-foreground">{{ reportToDelete.title }}</p>
+          <p class="mt-0.5 text-xs text-muted-foreground">{{ reportToDelete.location_text }}</p>
+        </div>
+
+        <DialogFooter>
+          <Button variant="outline" :disabled="deleting" @click="deleteDialogOpen = false">
+            {{ t('common.cancel') }}
+          </Button>
+          <Button variant="destructive" :disabled="deleting" @click="handleDeleteReport">
+            {{ deleting ? t('adminReports.deleting') : t('adminReports.confirmDelete') }}
           </Button>
         </DialogFooter>
       </DialogContent>

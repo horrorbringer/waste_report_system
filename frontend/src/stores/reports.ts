@@ -150,6 +150,15 @@ export const useReportStore = defineStore('reports', () => {
     }
   }
 
+  async function deleteReport(id: number) {
+    await api.delete(`/reports/${id}`)
+    allReports.value = allReports.value.filter((r) => r.id !== id)
+    myReports.value = myReports.value.filter((r) => r.id !== id)
+    if (currentReport.value?.id === id) {
+      currentReport.value = null
+    }
+  }
+
   async function fetchAdminStats() {
     loading.value = true
     try {
@@ -180,6 +189,7 @@ export const useReportStore = defineStore('reports', () => {
     submitReport,
     updateReportStatus,
     setReportPublication,
+    deleteReport,
     fetchAdminStats,
   }
 })

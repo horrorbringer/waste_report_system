@@ -17,6 +17,7 @@ import {
   Search,
   Sparkles,
   Tag,
+  Trash2,
   X,
 } from 'lucide-vue-next'
 import AppLayout from '@/layouts/AppLayout.vue'
@@ -25,7 +26,7 @@ import { useReportStore } from '@/stores/reports'
 import { useCategoryStore } from '@/stores/categories'
 import { formatDate, resolvePhotoUrl } from '@/lib/utils'
 import { localizedCategory, translateStatus } from '@/i18n'
-import type { ReportStatus } from '@/types'
+import type { ReportStatus, WasteReport } from '@/types'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
@@ -45,6 +46,14 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog'
 import { Skeleton } from '@/components/ui/skeleton'
 
 const { t, locale } = useI18n()
@@ -56,6 +65,27 @@ const selectedCategory = ref<string>('ALL')
 const searchQuery = ref('')
 const sortBy = ref<'newest' | 'oldest'>('newest')
 const viewMode = ref<'grid' | 'list'>('grid')
+
+const deleteDialogOpen = ref(false)
+const reportToDelete = ref<WasteReport | null>(null)
+const deleting = ref(false)
+
+function openDeleteModal(report: WasteReport) {
+  reportToDelete.value = report
+  deleteDialogOpen.value = true
+}
+
+async function handleDeleteReport() {
+  if (!reportToDelete.value) return
+  deleting.value = true
+  try {
+    await reportStore.deleteReport(reportToDelete.value.id)
+    deleteDialogOpen.value = false
+    reportToDelete.value = null
+  } finally {
+    deleting.value = false
+  }
+}
 
 onMounted(async () => {
   await Promise.all([
@@ -396,10 +426,21 @@ function resetFilters() {
                   </div>
                 </div>
 
-                <span class="inline-flex shrink-0 items-center gap-1 text-xs font-medium text-primary transition-transform group-hover:translate-x-0.5">
-                  {{ t('common.details') }}
-                  <ArrowUpRight class="h-3.5 w-3.5" />
-                </span>
+                <div class="flex items-center gap-2 shrink-0">
+                  <button
+                    v-if="report.status === 'Pending'"
+                    type="button"
+                    class="inline-flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive"
+                    :aria-label="t('adminReports.deleteBtn')"
+                    @click.prevent.stop="openDeleteModal(report)"
+                  >
+                    <Trash2 class="h-3.5 w-3.5" />
+                  </button>
+                  <span class="inline-flex shrink-0 items-center gap-1 text-xs font-medium text-primary transition-transform group-hover:translate-x-0.5">
+                    {{ t('common.details') }}
+                    <ArrowUpRight class="h-3.5 w-3.5" />
+                  </span>
+                </div>
               </div>
             </CardContent>
           </Card>
@@ -488,12 +529,24 @@ function resetFilters() {
 
                   <!-- Action -->
                   <TableCell class="text-right">
-                    <RouterLink :to="`/reports/${report.id}`">
-                      <Button variant="ghost" size="sm" class="h-7 px-2.5 text-xs gap-1">
-                        {{ t('common.details') }}
-                        <ArrowUpRight class="h-3 w-3" />
+                    <div class="inline-flex items-center justify-end gap-1">
+                      <RouterLink :to="`/reports/${report.id}`">
+                        <Button variant="ghost" size="sm" class="h-7 px-2.5 text-xs gap-1">
+                          {{ t('common.details') }}
+                          <ArrowUpRight class="h-3 w-3" />
+                        </Button>
+                      </RouterLink>
+                      <Button
+                        v-if="report.status === 'Pending'"
+                        variant="ghost"
+                        size="sm"
+                        class="h-7 px-2 text-destructive hover:bg-destructive/10 hover:text-destructive"
+                        :aria-label="t('adminReports.deleteBtn')"
+                        @click="openDeleteModal(report)"
+                      >
+                        <Trash2 class="h-3.5 w-3.5" />
                       </Button>
-                    </RouterLink>
+                    </div>
                   </TableCell>
                 </TableRow>
               </TableBody>
@@ -501,6 +554,30 @@ function resetFilters() {
           </div>
         </CardContent>
       </Card>
+
+      <!-- Delete Pending Report Confirmation Dialog -->
+      <Dialog v-model:open="deleteDialogOpen">
+        <DialogContent class="max-w-md">
+          <DialogHeader>
+            <DialogTitle>{{ t('adminReports.deleteTitle', { id: reportToDelete?.id }) }}</DialogTitle>
+            <DialogDescription>
+              {{ t('adminReports.deleteDesc') }}
+            </DialogDescription>
+          </DialogHeader>
+          <div v-if="reportToDelete" class="rounded-lg border bg-muted/40 p-3 text-sm">
+            <p class="font-medium text-foreground">{{ reportToDelete.title }}</p>
+            <p class="mt-0.5 text-xs text-muted-foreground">{{ reportToDelete.location_text }}</p>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" size="sm" :disabled="deleting" @click="deleteDialogOpen = false">
+              {{ t('common.cancel') }}
+            </Button>
+            <Button variant="destructive" size="sm" :disabled="deleting" @click="handleDeleteReport">
+              {{ deleting ? t('adminReports.deleting') : t('adminReports.confirmDelete') }}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   </AppLayout>
 </template>

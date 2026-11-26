@@ -515,6 +515,13 @@ const en = {
     updating: 'Updating...',
     updatedSuccess: 'Report #{id} updated to "{status}".',
     errUpdateFailed: 'Failed to update report status.',
+    deleteBtn: 'Delete',
+    deleteTitle: 'Delete Report #{id}',
+    deleteDesc: 'Are you sure you want to permanently delete this report? This action cannot be undone.',
+    confirmDelete: 'Delete Report',
+    deleting: 'Deleting...',
+    deletedSuccess: 'Report #{id} has been permanently deleted.',
+    errDeleteFailed: 'Failed to delete report.',
   },
   adminCategories: {
     eyebrow: 'Taxonomy Settings',

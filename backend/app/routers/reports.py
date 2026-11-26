@@ -444,3 +444,30 @@ def update_report_status(
         .where(WasteReport.id == report.id)
     )
     return serialize_report_detail(loaded)  # type: ignore[arg-type]
+
+
+@router.delete("/{report_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_report(
+    report_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> Response:
+    report = db.get(WasteReport, report_id)
+    if report is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Report not found.")
+
+    if current_user.role != "admin":
+        if report.user_id != current_user.id:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="You do not have permission to delete this report.",
+            )
+        if report.status != "Pending":
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Only pending reports can be deleted by the owner.",
+            )
+
+    db.delete(report)
+    db.commit()
+    return Response(status_code=status.HTTP_204_NO_CONTENT)

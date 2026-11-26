@@ -28,6 +28,7 @@ import {
   ShieldAlert,
   Sparkles,
   Tag,
+  Trash2,
   User as UserIcon,
 } from 'lucide-vue-next'
 import AppLayout from '@/layouts/AppLayout.vue'
@@ -78,6 +79,8 @@ const zoomModalOpen = ref(false)
 const activePhotoIndex = ref(0)
 const copied = ref(false)
 const coordsCopied = ref(false)
+const deleteDialogOpen = ref(false)
+const deleting = ref(false)
 
 const notePresets = [
   'presetNote1',
@@ -127,6 +130,11 @@ const directionsUrl = computed(() => {
 
 const isMyReport = computed(() => {
   return auth.user && report.value && auth.user.id === report.value.user_id
+})
+
+const canDelete = computed(() => {
+  if (!report.value) return false
+  return auth.isAdmin || (Boolean(isMyReport.value) && report.value.status === 'Pending')
 })
 
 const justSubmitted = computed(() => Boolean(
@@ -188,6 +196,22 @@ async function handleStatusSave() {
     savingStatus.value = false
   }
 }
+
+async function handleDeleteReport() {
+  if (!report.value) return
+  deleting.value = true
+  error.value = ''
+  try {
+    await reportStore.deleteReport(report.value.id)
+    deleteDialogOpen.value = false
+    router.replace(auth.isAdmin ? '/admin/reports' : '/my-reports')
+  } catch (err: any) {
+    error.value = err.response?.data?.detail || t('adminReports.errDeleteFailed')
+    deleteDialogOpen.value = false
+  } finally {
+    deleting.value = false
+  }
+}
 </script>
 
 <template>
@@ -231,6 +255,17 @@ async function handleStatusSave() {
           >
             <Edit3 class="h-3.5 w-3.5" />
             {{ t('detail.updateStatus') }}
+          </Button>
+
+          <Button
+            v-if="canDelete"
+            variant="outline"
+            size="sm"
+            class="h-8 gap-1.5 border-destructive/30 text-destructive hover:bg-destructive/10 hover:text-destructive"
+            @click="deleteDialogOpen = true"
+          >
+            <Trash2 class="h-3.5 w-3.5" />
+            {{ t('adminReports.deleteBtn') }}
           </Button>
         </div>
       </div>
@@ -890,6 +925,30 @@ async function handleStatusSave() {
               <ChevronRight class="h-4 w-4" />
             </Button>
           </div>
+        </DialogContent>
+      </Dialog>
+
+      <!-- Delete Report Confirmation Dialog -->
+      <Dialog v-model:open="deleteDialogOpen">
+        <DialogContent class="max-w-md">
+          <DialogHeader>
+            <DialogTitle>{{ t('adminReports.deleteTitle', { id: report?.id }) }}</DialogTitle>
+            <DialogDescription>
+              {{ t('adminReports.deleteDesc') }}
+            </DialogDescription>
+          </DialogHeader>
+          <div v-if="report" class="rounded-lg border bg-muted/40 p-3 text-sm">
+            <p class="font-medium text-foreground">{{ report.title }}</p>
+            <p class="mt-0.5 text-xs text-muted-foreground">{{ report.location_text }}</p>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" size="sm" :disabled="deleting" @click="deleteDialogOpen = false">
+              {{ t('common.cancel') }}
+            </Button>
+            <Button variant="destructive" size="sm" :disabled="deleting" @click="handleDeleteReport">
+              {{ deleting ? t('adminReports.deleting') : t('adminReports.confirmDelete') }}
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>
