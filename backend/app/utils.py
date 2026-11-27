@@ -17,6 +17,7 @@ def serialize_report(report: WasteReport) -> ReportResponse:
         latitude=report.latitude,
         longitude=report.longitude,
         photo_path=report.photo_path,
+        resolution_photo_path=report.resolution_photo_path,
         status=report.status,
         created_at=report.created_at,
         updated_at=report.updated_at,

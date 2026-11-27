@@ -46,6 +46,15 @@ export const useAuthStore = defineStore('auth', () => {
 
   const isStaff = computed(() => hasAnyPermission(STAFF_PERMISSIONS))
 
+  const firstAdminRoute = computed<string>(() => {
+    if (hasPermission('dashboard:view')) return '/admin/dashboard'
+    if (hasPermission('reports:view_all')) return '/admin/reports'
+    if (hasPermission('categories:manage')) return '/admin/categories'
+    if (hasAnyPermission(['users:manage', 'roles:manage'])) return '/admin/users'
+    if (hasPermission('settings:manage')) return '/admin/settings'
+    return '/my-reports'
+  })
+
   function setSession(data: TokenResponse) {
     token.value = data.access_token
     user.value = data.user
@@ -99,6 +108,20 @@ export const useAuthStore = defineStore('auth', () => {
     }
   }
 
+  async function updateProfile(fullName: string): Promise<User> {
+    const { data } = await api.patch<User>('/auth/me', { full_name: fullName })
+    user.value = data
+    localStorage.setItem('cwrs_user', JSON.stringify(data))
+    return data
+  }
+
+  async function changePassword(currentPassword: string, newPassword: string): Promise<void> {
+    await api.post('/auth/change-password', {
+      current_password: currentPassword,
+      new_password: newPassword,
+    })
+  }
+
   return {
     token,
     user,
@@ -107,6 +130,7 @@ export const useAuthStore = defineStore('auth', () => {
     isAdmin,
     isModerator,
     isStaff,
+    firstAdminRoute,
     isResident,
     permissions,
     hasRole,
@@ -116,5 +140,7 @@ export const useAuthStore = defineStore('auth', () => {
     register,
     logout,
     fetchMe,
+    updateProfile,
+    changePassword,
   }
 })

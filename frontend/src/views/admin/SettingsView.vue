@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
+import { formatApiError } from '@/lib/utils'
 import {
   Cloud,
   HardDrive,
@@ -191,7 +192,7 @@ async function handleSave() {
       saveSuccess.value = ''
     }, 4000)
   } catch (err: any) {
-    saveError.value = err.response?.data?.detail || t('adminSettings.errSaveFailed')
+    saveError.value = formatApiError(err, t('adminSettings.errSaveFailed'))
   }
 }
 
@@ -211,7 +212,7 @@ async function handleTestConnection() {
     testResult.value = {
       ok: false,
       provider: form.provider,
-      message: err.response?.data?.detail || t('adminSettings.testFailTitle'),
+      message: formatApiError(err, t('adminSettings.testFailTitle')),
     }
   }
 }

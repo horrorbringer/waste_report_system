@@ -2,6 +2,7 @@
 import { computed, onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
+import { formatApiError } from '@/lib/utils'
 import {
   AlertCircle,
   ArrowLeft,
@@ -80,7 +81,27 @@ const activePhotoIndex = ref(0)
 const copied = ref(false)
 const coordsCopied = ref(false)
 const deleteDialogOpen = ref(false)
-const deleting = ref(false)
+  const deleting = ref(false)
+const uploadingResolution = ref(false)
+const resolutionInputEl = ref<HTMLInputElement | null>(null)
+
+async function handleResolutionPhotoChange(event: Event) {
+  const input = event.target as HTMLInputElement
+  const file = input.files?.[0]
+  input.value = ''
+  if (!file || !report.value) return
+  uploadingResolution.value = true
+  error.value = ''
+  statusSuccess.value = ''
+  try {
+    await reportStore.uploadResolutionPhoto(report.value.id, file)
+    statusSuccess.value = t('detail.cleanupPhotoUploaded')
+  } catch (err: any) {
+    error.value = formatApiError(err, t('detail.errCleanupPhotoFailed'))
+  } finally {
+    uploadingResolution.value = false
+  }
+}
 
 const notePresets = [
   'presetNote1',
@@ -97,7 +118,7 @@ onMounted(async () => {
     if (err.response?.status === 403) {
       router.replace('/403')
     } else {
-      error.value = err.response?.data?.detail || t('detail.errNotFound')
+      error.value = formatApiError(err, t('detail.errNotFound'))
     }
   }
 })
@@ -191,7 +212,7 @@ async function handleStatusSave() {
       status: translateStatus(nextStatus.value, t),
     })
   } catch (err: any) {
-    error.value = err.response?.data?.detail || t('detail.errUpdateFailed')
+    error.value = formatApiError(err, t('detail.errUpdateFailed'))
   } finally {
     savingStatus.value = false
   }
@@ -206,7 +227,7 @@ async function handleDeleteReport() {
     deleteDialogOpen.value = false
     router.replace(auth.hasPermission('reports:view_all') ? '/admin/reports' : '/my-reports')
   } catch (err: any) {
-    error.value = err.response?.data?.detail || t('adminReports.errDeleteFailed')
+    error.value = formatApiError(err, t('adminReports.errDeleteFailed'))
     deleteDialogOpen.value = false
   } finally {
     deleting.value = false
@@ -636,6 +657,64 @@ async function handleDeleteReport() {
                   </div>
                   <p class="text-xs font-medium text-foreground">{{ t('detail.noPhotoAttached') }}</p>
                   <p class="mt-1 text-[11px] text-muted-foreground">{{ t('detail.noPhotoDesc') }}</p>
+                </div>
+
+                <!-- After Cleanup (Resolution) Photo -->
+                <div
+                  v-if="report.resolution_photo_path || auth.hasPermission('reports:update_status')"
+                  class="mt-4 border-t pt-4 space-y-2.5"
+                >
+                  <div class="flex flex-wrap items-center justify-between gap-2">
+                    <p class="text-xs font-semibold text-emerald-700 dark:text-emerald-400">
+                      {{ t('detail.cleanupPhotoTitle') }}
+                    </p>
+                    <div v-if="auth.hasPermission('reports:update_status')">
+                      <input
+                        ref="resolutionInputEl"
+                        type="file"
+                        accept="image/*"
+                        class="hidden"
+                        @change="handleResolutionPhotoChange"
+                      />
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        class="h-7 gap-1.5 text-xs"
+                        :disabled="uploadingResolution"
+                        @click="resolutionInputEl?.click()"
+                      >
+                        <Loader2 v-if="uploadingResolution" class="h-3 w-3 animate-spin" />
+                        <ImageIcon v-else class="h-3 w-3" />
+                        {{
+                          uploadingResolution
+                            ? t('common.saving')
+                            : report.resolution_photo_path
+                              ? t('detail.replaceCleanupPhoto')
+                              : t('detail.uploadCleanupPhoto')
+                        }}
+                      </Button>
+                    </div>
+                  </div>
+                  <div
+                    v-if="report.resolution_photo_path"
+                    class="overflow-hidden rounded-xl border border-emerald-500/30 bg-muted/20"
+                  >
+                    <a
+                      :href="resolvePhotoUrl(report.resolution_photo_path)"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      <img
+                        :src="resolvePhotoUrl(report.resolution_photo_path)"
+                        :alt="t('detail.cleanupPhotoTitle')"
+                        class="max-h-72 w-full object-cover transition hover:opacity-95"
+                      />
+                    </a>
+                  </div>
+                  <p v-else class="text-[11px] text-muted-foreground">
+                    {{ t('detail.cleanupPhotoEmptyHint') }}
+                  </p>
                 </div>
               </CardContent>
             </Card>

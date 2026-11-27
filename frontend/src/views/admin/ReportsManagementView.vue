@@ -1,11 +1,12 @@
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { Search, Edit3, Eye, CheckCircle2, AlertCircle, FilterX, Trash2, CheckSquare, X, ImageIcon } from 'lucide-vue-next'
+import { Search, Edit3, Eye, CheckCircle2, AlertCircle, FilterX, Trash2, CheckSquare, X, ImageIcon, Download } from 'lucide-vue-next'
 import StatusBadge from '@/components/StatusBadge.vue'
+import TablePagination from '@/components/TablePagination.vue'
 import { useReportStore } from '@/stores/reports'
 import { useCategoryStore } from '@/stores/categories'
-import { formatDate, resolvePhotoUrl } from '@/lib/utils'
+import { formatApiError, formatDate, resolvePhotoUrl } from '@/lib/utils'
 import { localizedCategory, translateStatus } from '@/i18n'
 import type { ReportStatus, WasteReport } from '@/types'
 import { Button } from '@/components/ui/button'
@@ -100,12 +101,17 @@ function clearSelection() {
   selectedIds.value = []
 }
 
+const pageLimit = 15
+const pageOffset = ref(0)
+
 async function loadReports() {
   selectedIds.value = []
   await reportStore.fetchAllReports({
     status: statusFilter.value,
     category_id: categoryFilter.value,
     search: searchQuery.value,
+    limit: pageLimit,
+    offset: pageOffset.value,
   })
 }
 
@@ -115,11 +121,13 @@ onMounted(async () => {
 
 let searchTimeout: ReturnType<typeof setTimeout> | null = null
 watch([statusFilter, categoryFilter], () => {
+  pageOffset.value = 0
   loadReports()
 })
 watch(searchQuery, () => {
   if (searchTimeout) clearTimeout(searchTimeout)
   searchTimeout = setTimeout(() => {
+    pageOffset.value = 0
     loadReports()
   }, 250)
 })
@@ -152,7 +160,7 @@ async function handleStatusUpdate() {
     dialogOpen.value = false
     await loadReports()
   } catch (err: any) {
-    errorMsg.value = err.response?.data?.detail || t('adminReports.errUpdateFailed')
+    errorMsg.value = formatApiError(err, t('adminReports.errUpdateFailed'))
   } finally {
     saving.value = false
   }
@@ -176,7 +184,7 @@ async function handleDeleteReport() {
     deleteDialogOpen.value = false
     reportToDelete.value = null
   } catch (err: any) {
-    errorMsg.value = err.response?.data?.detail || t('adminReports.errDeleteFailed')
+    errorMsg.value = formatApiError(err, t('adminReports.errDeleteFailed'))
   } finally {
     deleting.value = false
   }
@@ -197,7 +205,7 @@ async function handleBulkStatusUpdate() {
     bulkNote.value = ''
     await loadReports()
   } catch (err: any) {
-    errorMsg.value = err.response?.data?.detail || t('adminReports.errUpdateFailed')
+    errorMsg.value = formatApiError(err, t('adminReports.errUpdateFailed'))
   } finally {
     bulkProcessing.value = false
   }
@@ -214,21 +222,49 @@ async function handleBulkDelete() {
     bulkDeleteDialogOpen.value = false
     selectedIds.value = []
   } catch (err: any) {
-    errorMsg.value = err.response?.data?.detail || t('adminReports.errDeleteFailed')
+    errorMsg.value = formatApiError(err, t('adminReports.errDeleteFailed'))
   } finally {
     bulkProcessing.value = false
+  }
+}
+
+const exporting = ref(false)
+async function handleExportCsv() {
+  exporting.value = true
+  errorMsg.value = ''
+  try {
+    await reportStore.exportReportsCsv({
+      status: statusFilter.value,
+      category_id: categoryFilter.value,
+      search: searchQuery.value,
+    })
+  } catch (err: any) {
+    errorMsg.value = formatApiError(err, t('adminReports.errExportFailed'))
+  } finally {
+    exporting.value = false
   }
 }
 </script>
 
 <template>
   <div class="space-y-6">
-    <div>
-      <p class="text-eyebrow mb-1">{{ t('adminReports.eyebrow') }}</p>
-      <h2 class="heading-page">{{ t('adminReports.title') }}</h2>
-      <p class="mt-1 text-sm leading-relaxed text-muted-foreground">
-        {{ t('adminReports.subtitle') }}
-      </p>
+    <div class="flex flex-wrap items-end justify-between gap-3">
+      <div>
+        <p class="text-eyebrow mb-1">{{ t('adminReports.eyebrow') }}</p>
+        <h2 class="heading-page">{{ t('adminReports.title') }}</h2>
+        <p class="mt-1 text-sm leading-relaxed text-muted-foreground">
+          {{ t('adminReports.subtitle') }}
+        </p>
+      </div>
+      <Button
+        variant="outline"
+        class="gap-2"
+        :disabled="exporting || reportStore.allReports.length === 0"
+        @click="handleExportCsv"
+      >
+        <Download class="h-4 w-4" />
+        {{ exporting ? t('adminReports.exportingCsv') : t('adminReports.exportCsv') }}
+      </Button>
     </div>
 
     <Alert v-if="successMsg" variant="success">
@@ -247,7 +283,7 @@ async function handleBulkDelete() {
           <div>
             <CardTitle>{{ t('adminReports.tableTitle') }}</CardTitle>
             <CardDescription>
-              {{ t('adminReports.matchingCount', { count: reportStore.allReports.length }) }}
+              {{ t('adminReports.matchingCount', { count: reportStore.totalAllReports }) }}
             </CardDescription>
           </div>
 
@@ -480,6 +516,13 @@ async function handleBulkDelete() {
             </TableRow>
           </TableBody>
         </Table>
+        <TablePagination
+          :total="reportStore.totalAllReports"
+          :limit="pageLimit"
+          :offset="pageOffset"
+          :loading="reportStore.loading"
+          @update:offset="(val) => { pageOffset = val; loadReports() }"
+        />
       </CardContent>
     </Card>
 

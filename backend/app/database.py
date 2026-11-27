@@ -36,17 +36,27 @@ def ensure_schema_columns(target_engine: Engine) -> None:
         if "description_km" not in existing_cols:
             alter_statements.append("ALTER TABLE categories ADD COLUMN description_km VARCHAR(600)")
 
-    if inspector.has_table("users") and target_engine.dialect.name == "postgresql":
+    if inspector.has_table("users"):
         user_cols = {col["name"]: col for col in inspector.get_columns("users")}
-        role_col = user_cols.get("role")
-        if role_col is not None and getattr(role_col.get("type"), "length", 40) < 40:
-            alter_statements.append("ALTER TABLE users ALTER COLUMN role TYPE VARCHAR(40)")
+        if target_engine.dialect.name == "postgresql":
+            role_col = user_cols.get("role")
+            if role_col is not None and getattr(role_col.get("type"), "length", 40) < 40:
+                alter_statements.append("ALTER TABLE users ALTER COLUMN role TYPE VARCHAR(40)")
+        if "is_active" not in user_cols:
+            default_true = "TRUE" if target_engine.dialect.name == "postgresql" else "1"
+            alter_statements.append(
+                f"ALTER TABLE users ADD COLUMN is_active BOOLEAN NOT NULL DEFAULT {default_true}"
+            )
 
     if inspector.has_table("waste_reports"):
         report_columns = {col["name"] for col in inspector.get_columns("waste_reports")}
         if_not_exists = " IF NOT EXISTS" if target_engine.dialect.name == "postgresql" else ""
         report_fields = {
-            "public_district": "INTEGER", "public_province": "INTEGER", "location_district": "INTEGER", "photo_paths": "JSON"
+            "public_district": "INTEGER",
+            "public_province": "INTEGER",
+            "location_district": "INTEGER",
+            "photo_paths": "JSON",
+            "resolution_photo_path": "VARCHAR(500)",
         }
         for column, column_type in report_fields.items():
             if column not in report_columns:

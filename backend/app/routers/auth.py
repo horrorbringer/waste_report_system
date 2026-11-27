@@ -6,7 +6,14 @@ from app.database import get_db
 from app.deps import get_current_user
 from app.models import User
 from app.permissions import get_role_permissions
-from app.schemas import TokenResponse, UserCreate, UserLogin, UserResponse
+from app.schemas import (
+    PasswordChangeRequest,
+    TokenResponse,
+    UserCreate,
+    UserLogin,
+    UserProfileUpdate,
+    UserResponse,
+)
 from app.security import create_access_token, hash_password, verify_password
 from app.services.settings_service import resolve_settings
 
@@ -59,6 +66,11 @@ def login(payload: UserLogin, db: Session = Depends(get_db)) -> TokenResponse:
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid email or password.",
         )
+    if not user.is_active:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Your account has been suspended. Please contact an administrator.",
+        )
 
     token = create_access_token(subject=user.id, role=user.role)
     return TokenResponse(access_token=token, user=_serialize_user_with_permissions(db, user))
@@ -70,3 +82,37 @@ def get_me(
     db: Session = Depends(get_db),
 ) -> UserResponse:
     return _serialize_user_with_permissions(db, current_user)
+
+
+@router.patch("/me", response_model=UserResponse)
+def update_my_profile(
+    payload: UserProfileUpdate,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> UserResponse:
+    clean_name = payload.full_name.strip()
+    if len(clean_name) < 2:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="Full name must be at least 2 characters.",
+        )
+    current_user.full_name = clean_name
+    db.commit()
+    db.refresh(current_user)
+    return _serialize_user_with_permissions(db, current_user)
+
+
+@router.post("/change-password", status_code=status.HTTP_200_OK)
+def change_my_password(
+    payload: PasswordChangeRequest,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> dict[str, str]:
+    if not verify_password(payload.current_password, current_user.password_hash):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Current password is incorrect.",
+        )
+    current_user.password_hash = hash_password(payload.new_password)
+    db.commit()
+    return {"message": "Password updated successfully."}

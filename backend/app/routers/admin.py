@@ -11,8 +11,10 @@ from app.schemas import (
     AdminDashboardStats,
     AdminUserCreate,
     AdminUserResponse,
+    AdminUsersPage,
     AdminUserUpdate,
     CategoryDistributionItem,
+    MapPinReport,
     PermissionDefinition,
     PublicStatsResponse,
     RoleCreate,
@@ -92,6 +94,29 @@ def get_admin_stats(
         .limit(8)
     ).all()
 
+    gps_reports = db.scalars(
+        select(WasteReport)
+        .options(joinedload(WasteReport.category))
+        .where(WasteReport.latitude.is_not(None), WasteReport.longitude.is_not(None))
+        .order_by(WasteReport.created_at.desc())
+        .limit(300)
+    ).all()
+    map_pins = [
+        MapPinReport(
+            id=r.id,
+            title=r.title,
+            status=r.status,
+            latitude=float(r.latitude),
+            longitude=float(r.longitude),
+            location_text=r.location_text,
+            category_name=r.category.name if r.category else "Uncategorized",
+            category_name_km=r.category.name_km if r.category else None,
+            created_at=r.created_at,
+        )
+        for r in gps_reports
+        if r.latitude is not None and r.longitude is not None
+    ]
+
     return AdminDashboardStats(
         total_reports=total_reports,
         pending_count=pending_count,
@@ -102,41 +127,52 @@ def get_admin_stats(
         status_distribution=status_distribution,
         category_distribution=category_distribution,
         recent_reports=[serialize_report(r) for r in recent],
+        map_pins=map_pins,
     )
 
 
-@router.get("/api/admin/users", response_model=list[AdminUserResponse])
+@router.get("/api/admin/users", response_model=AdminUsersPage)
 def list_admin_users(
     search: str | None = Query(default=None, max_length=100),
     role: str | None = Query(default=None),
+    limit: int = Query(default=15, ge=1, le=200),
+    offset: int = Query(default=0, ge=0),
     db: Session = Depends(get_db),
     _: User = Depends(require_permission("users:manage")),
-) -> list[AdminUserResponse]:
+) -> AdminUsersPage:
     stmt = (
         select(User, func.count(WasteReport.id).label("report_count"))
         .outerjoin(WasteReport, WasteReport.user_id == User.id)
         .group_by(User.id)
         .order_by(User.created_at.desc(), User.id.desc())
     )
+    count_stmt = select(func.count(User.id))
 
     if role and role.strip() and role.strip().upper() != "ALL":
-        stmt = stmt.where(User.role == role.strip().lower())
+        clean_role = role.strip().lower()
+        stmt = stmt.where(User.role == clean_role)
+        count_stmt = count_stmt.where(User.role == clean_role)
     if search and search.strip():
         pattern = f"%{search.strip()}%"
-        stmt = stmt.where(or_(User.full_name.ilike(pattern), User.email.ilike(pattern)))
+        search_cond = or_(User.full_name.ilike(pattern), User.email.ilike(pattern))
+        stmt = stmt.where(search_cond)
+        count_stmt = count_stmt.where(search_cond)
 
-    rows = db.execute(stmt).all()
-    return [
+    total = int(db.scalar(count_stmt) or 0)
+    rows = db.execute(stmt.offset(offset).limit(limit)).all()
+    items = [
         AdminUserResponse(
             id=user.id,
             full_name=user.full_name,
             email=user.email,
             role=user.role,
+            is_active=user.is_active,
             created_at=user.created_at,
             report_count=int(report_count or 0),
         )
         for user, report_count in rows
     ]
+    return AdminUsersPage(items=items, total=total, limit=limit, offset=offset)
 
 
 def _validate_role_exists(db: Session, role_slug: str) -> str:
@@ -179,6 +215,7 @@ def create_admin_user(
         full_name=user.full_name,
         email=user.email,
         role=user.role,
+        is_active=user.is_active,
         created_at=user.created_at,
         report_count=0,
     )
@@ -210,6 +247,14 @@ def update_admin_user(
             raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Full name is too short.")
         user.full_name = clean_name
 
+    if payload.is_active is not None:
+        if user.id == current_admin.id and not payload.is_active:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="You cannot suspend your own active admin account.",
+            )
+        user.is_active = payload.is_active
+
     if payload.password:
         user.password_hash = hash_password(payload.password)
 
@@ -222,6 +267,7 @@ def update_admin_user(
         full_name=user.full_name,
         email=user.email,
         role=user.role,
+        is_active=user.is_active,
         created_at=user.created_at,
         report_count=report_count,
     )

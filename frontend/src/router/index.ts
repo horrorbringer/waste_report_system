@@ -57,9 +57,15 @@ const routes: RouteRecordRaw[] = [
     meta: { requiresAuth: true, titleKey: 'routes.reportDetail' },
   },
   {
+    path: '/profile',
+    name: 'profile',
+    component: () => import('@/views/ProfileView.vue'),
+    meta: { requiresAuth: true, titleKey: 'routes.profile' },
+  },
+  {
     path: '/admin',
     component: () => import('@/layouts/AdminLayout.vue'),
-    redirect: '/admin/dashboard',
+    redirect: () => useAuthStore().firstAdminRoute,
     meta: {
       requiresAuth: true,
       permissionsAny: [
@@ -140,7 +146,7 @@ router.beforeEach(async (to) => {
   }
 
   if (to.meta.guestOnly && auth.isAuthenticated) {
-    return auth.isStaff ? { name: 'admin-dashboard' } : { name: 'my-reports' }
+    return auth.isStaff ? auth.firstAdminRoute : { name: 'my-reports' }
   }
 
   if (to.meta.roles && to.meta.roles.length > 0 && !auth.hasRole(to.meta.roles)) {

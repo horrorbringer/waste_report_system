@@ -1,7 +1,9 @@
 <script setup lang="ts">
-import { computed, nextTick, onMounted, onUnmounted, ref } from 'vue'
+import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
+import type { NearbyReportItem } from '@/types'
 import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
+import { formatApiError } from '@/lib/utils'
 import {
   AlertCircle,
   AlertTriangle,
@@ -263,6 +265,23 @@ function selectMapLocation({ lat, lng, address, district }: { lat: number; lng: 
   if (address && locationText.value.trim().length < 5) locationText.value = address.slice(0, 300)
 }
 
+const nearbyReports = ref<NearbyReportItem[]>([])
+let nearbyTimer: ReturnType<typeof setTimeout> | null = null
+watch(coordinates, (coords) => {
+  if (nearbyTimer) clearTimeout(nearbyTimer)
+  if (!coords) {
+    nearbyReports.value = []
+    return
+  }
+  nearbyTimer = setTimeout(async () => {
+    try {
+      nearbyReports.value = await reportStore.findNearbyReports(Number(coords.lat), Number(coords.lng), 200)
+    } catch {
+      nearbyReports.value = []
+    }
+  }, 350)
+})
+
 function clearCoordinates() {
   latitude.value = ''
   longitude.value = ''
@@ -322,7 +341,7 @@ async function handleSubmit() {
       photoError.value = detail
       document.getElementById('report-photo')?.focus()
     } else {
-      error.value = typeof detail === 'string' ? detail : t('submitReport.errSubmitFailed')
+      error.value = formatApiError(err, t('submitReport.errSubmitFailed'))
       await nextTick()
       document.getElementById('report-submit-error')?.focus()
     }
@@ -593,6 +612,33 @@ async function handleSubmit() {
                 </button>
               </div>
             </div>
+
+            <!-- Nearby Unresolved Report Warning -->
+            <Alert
+              v-if="nearbyReports.length > 0"
+              class="border-amber-500/40 bg-amber-500/10 text-amber-900 dark:text-amber-200"
+            >
+              <AlertTriangle class="h-4 w-4 text-amber-600 dark:text-amber-400" />
+              <AlertDescription class="space-y-1.5 text-xs">
+                <p class="font-semibold">
+                  {{ t('submitReport.nearbyWarningTitle', { count: nearbyReports.length }) }}
+                </p>
+                <ul class="space-y-1">
+                  <li v-for="item in nearbyReports" :key="item.id" class="flex items-center justify-between gap-2">
+                    <span class="truncate">
+                      #{{ item.id }} · {{ item.title }} ({{ item.distance_meters }}m)
+                    </span>
+                    <RouterLink
+                      :to="`/reports/${item.id}`"
+                      target="_blank"
+                      class="shrink-0 font-medium underline hover:opacity-80"
+                    >
+                      {{ t('adminReports.viewBtn') }}
+                    </RouterLink>
+                  </li>
+                </ul>
+              </AlertDescription>
+            </Alert>
 
             <!-- Expandable Manual Coordinates -->
             <details ref="coordinateFields" class="text-xs">

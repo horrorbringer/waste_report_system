@@ -17,6 +17,7 @@ class User(Base):
     email: Mapped[str] = mapped_column(String(255), unique=True, index=True, nullable=False)
     password_hash: Mapped[str] = mapped_column(String(255), nullable=False)
     role: Mapped[str] = mapped_column(String(40), default="resident", nullable=False)
+    is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now, nullable=False)
 
     reports: Mapped[list["WasteReport"]] = relationship(
@@ -65,6 +66,7 @@ class WasteReport(Base):
     longitude: Mapped[float | None] = mapped_column(Float, nullable=True)
     photo_path: Mapped[str | None] = mapped_column(String(500), nullable=True)
     photo_paths: Mapped[list[str] | None] = mapped_column(JSON(none_as_null=True), nullable=True)
+    resolution_photo_path: Mapped[str | None] = mapped_column(String(500), nullable=True)
     location_district: Mapped[int | None] = mapped_column(Integer, nullable=True)
     public_district: Mapped[int | None] = mapped_column(Integer, nullable=True)
     public_province: Mapped[int | None] = mapped_column(Integer, nullable=True)

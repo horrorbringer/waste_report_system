@@ -17,6 +17,7 @@ import {
   X,
 } from 'lucide-vue-next'
 import { useCategoryStore } from '@/stores/categories'
+import { formatApiError } from '@/lib/utils'
 import type { Category } from '@/types'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -136,7 +137,7 @@ async function handleSave() {
     }
     dialogOpen.value = false
   } catch (err: any) {
-    errorMsg.value = err.response?.data?.detail || t('adminCategories.errSaveFailed')
+    errorMsg.value = formatApiError(err, t('adminCategories.errSaveFailed'))
   } finally {
     saving.value = false
   }
@@ -160,7 +161,7 @@ async function handleConfirmDelete() {
     deleteDialogOpen.value = false
     categoryToDelete.value = null
   } catch (err: any) {
-    errorMsg.value = err.response?.data?.detail || t('adminCategories.errDeleteFailed')
+    errorMsg.value = formatApiError(err, t('adminCategories.errDeleteFailed'))
     deleteDialogOpen.value = false
   } finally {
     deleting.value = false

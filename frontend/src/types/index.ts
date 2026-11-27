@@ -6,12 +6,21 @@ export interface User {
   full_name: string
   email: string
   role: UserRole
+  is_active?: boolean
   permissions?: string[]
   created_at: string
 }
 
 export interface AdminUser extends User {
+  is_active: boolean
   report_count: number
+}
+
+export interface PaginatedResponse<T> {
+  items: T[]
+  total: number
+  limit: number
+  offset: number
 }
 
 export interface PermissionDefinition {
@@ -74,6 +83,7 @@ export interface WasteReport {
   latitude: number | null
   longitude: number | null
   photo_path: string | null
+  resolution_photo_path?: string | null
   status: ReportStatus
   created_at: string
   updated_at: string
@@ -150,6 +160,27 @@ export interface CategoryDistributionItem {
   count: number
 }
 
+export interface NearbyReportItem {
+  id: number
+  title: string
+  status: ReportStatus
+  location_text: string
+  distance_meters: number
+  created_at: string
+}
+
+export interface MapPinReport {
+  id: number
+  title: string
+  status: ReportStatus
+  latitude: number
+  longitude: number
+  location_text: string
+  category_name: string
+  category_name_km: string | null
+  created_at: string
+}
+
 export interface AdminDashboardStats {
   total_reports: number
   pending_count: number
@@ -160,6 +191,7 @@ export interface AdminDashboardStats {
   status_distribution: StatusDistributionItem[]
   category_distribution: CategoryDistributionItem[]
   recent_reports: WasteReport[]
+  map_pins?: MapPinReport[]
 }
 
 export type StorageProviderId = 'cloudinary' | 's3_compatible' | 'local'

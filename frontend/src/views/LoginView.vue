@@ -5,6 +5,7 @@ import { useI18n } from 'vue-i18n'
 import { Leaf, AlertCircle, ShieldCheck, User as UserIcon, Loader2 } from 'lucide-vue-next'
 import AppLayout from '@/layouts/AppLayout.vue'
 import { useAuthStore } from '@/stores/auth'
+import { formatApiError } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -28,12 +29,12 @@ async function handleSubmit() {
     if (redirect) {
       router.push(redirect)
     } else if (auth.isStaff) {
-      router.push('/admin/dashboard')
+      router.push(auth.firstAdminRoute)
     } else {
       router.push('/my-reports')
     }
   } catch (err: any) {
-    error.value = err.response?.data?.detail || t('auth.errLoginFailed')
+    error.value = formatApiError(err, t('auth.errLoginFailed'))
   }
 }
 

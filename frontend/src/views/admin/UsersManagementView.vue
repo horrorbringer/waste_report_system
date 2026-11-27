@@ -3,6 +3,7 @@ import { computed, onMounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import {
   AlertCircle,
+  Ban,
   CheckCircle2,
   KeyRound,
   Lock,
@@ -12,6 +13,7 @@ import {
   Shield,
   ShieldCheck,
   Trash2,
+  UserCheck,
   User as UserIcon,
   Users as UsersIcon,
   X,
@@ -19,6 +21,7 @@ import {
 import { useAuthStore } from '@/stores/auth'
 import { useUserStore } from '@/stores/users'
 import { formatApiError, formatDate } from '@/lib/utils'
+import TablePagination from '@/components/TablePagination.vue'
 import { translateRole } from '@/i18n'
 import type { AdminUser, PermissionDefinition, RoleItem, UserRole } from '@/types'
 import { Button } from '@/components/ui/button'
@@ -68,6 +71,7 @@ const editingUser = ref<AdminUser | null>(null)
 const formName = ref('')
 const formEmail = ref('')
 const formRole = ref<UserRole>('resident')
+const formIsActive = ref(true)
 const formPassword = ref('')
 const saving = ref(false)
 
@@ -118,11 +122,16 @@ function getRoleDisplayName(slug: string): string {
   return found ? found.name : slug
 }
 
+const pageLimit = 15
+const pageOffset = ref(0)
+
 async function loadUsers() {
   if (!canManageUsers.value) return
   await userStore.fetchUsers({
     search: searchQuery.value,
     role: roleFilter.value,
+    limit: pageLimit,
+    offset: pageOffset.value,
   })
 }
 
@@ -134,11 +143,13 @@ onMounted(async () => {
 
 let searchTimeout: ReturnType<typeof setTimeout> | null = null
 watch(roleFilter, () => {
+  pageOffset.value = 0
   loadUsers()
 })
 watch(searchQuery, () => {
   if (searchTimeout) clearTimeout(searchTimeout)
   searchTimeout = setTimeout(() => {
+    pageOffset.value = 0
     loadUsers()
   }, 250)
 })
@@ -156,6 +167,7 @@ function openCreateDialog() {
   formName.value = ''
   formEmail.value = ''
   formRole.value = 'resident'
+  formIsActive.value = true
   formPassword.value = ''
   errorMsg.value = ''
   dialogError.value = ''
@@ -167,10 +179,25 @@ function openEditDialog(user: AdminUser) {
   formName.value = user.full_name
   formEmail.value = user.email
   formRole.value = user.role
+  formIsActive.value = user.is_active
   formPassword.value = ''
   errorMsg.value = ''
   dialogError.value = ''
   dialogOpen.value = true
+}
+
+async function handleToggleActive(user: AdminUser) {
+  errorMsg.value = ''
+  successMsg.value = ''
+  try {
+    const nextActive = !user.is_active
+    const updated = await userStore.updateUser(user.id, { is_active: nextActive })
+    successMsg.value = nextActive
+      ? t('adminUsers.activatedMsg', { email: updated.email })
+      : t('adminUsers.suspendedMsg', { email: updated.email })
+  } catch (err: any) {
+    errorMsg.value = formatApiError(err, t('adminUsers.errSaveFailed'))
+  }
 }
 
 async function handleSave() {
@@ -192,6 +219,7 @@ async function handleSave() {
       const updated = await userStore.updateUser(editingUser.value.id, {
         full_name: formName.value.trim(),
         role: formRole.value,
+        is_active: formIsActive.value,
         password: formPassword.value || null,
       })
       successMsg.value = t('adminUsers.updatedMsg', { email: updated.email })
@@ -382,7 +410,7 @@ async function handleConfirmDeleteRole() {
           <div>
             <CardTitle class="text-base font-semibold">{{ t('adminUsers.tableTitle') }}</CardTitle>
             <CardDescription class="text-xs">
-              {{ t('adminUsers.matchingCount', { count: userStore.users.length }) }}
+              {{ t('adminUsers.matchingCount', { count: userStore.totalUsers }) }}
             </CardDescription>
           </div>
 
@@ -467,6 +495,7 @@ async function handleConfirmDeleteRole() {
                 v-else
                 :key="user.id"
                 class="transition-colors hover:bg-muted/40"
+                :class="!user.is_active ? 'opacity-65' : ''"
               >
                 <TableCell>
                   <div class="flex items-center gap-3">
@@ -485,6 +514,13 @@ async function handleConfirmDeleteRole() {
                           class="border-primary/30 px-1.5 py-0 text-[10px] font-semibold text-primary"
                         >
                           {{ t('adminUsers.youBadge') }}
+                        </Badge>
+                        <Badge
+                          v-if="!user.is_active"
+                          variant="destructive"
+                          class="px-1.5 py-0 text-[10px] font-semibold"
+                        >
+                          {{ t('adminUsers.statusSuspended') }}
                         </Badge>
                       </div>
                       <p class="truncate text-xs text-muted-foreground">{{ user.email }}</p>
@@ -530,6 +566,24 @@ async function handleConfirmDeleteRole() {
                     <span class="mx-0.5 h-4 w-px bg-border" aria-hidden="true" />
                     <button
                       type="button"
+                      class="inline-flex h-7 items-center justify-center rounded-md px-2 text-xs font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-40"
+                      :class="user.is_active ? 'text-amber-600 hover:bg-amber-500/10' : 'text-emerald-600 hover:bg-emerald-500/10'"
+                      :disabled="auth.user?.id === user.id"
+                      :title="
+                        auth.user?.id === user.id
+                          ? t('adminUsers.selfSuspendTooltip')
+                          : user.is_active
+                            ? t('adminUsers.suspendUser')
+                            : t('adminUsers.activateUser')
+                      "
+                      @click="handleToggleActive(user)"
+                    >
+                      <Ban v-if="user.is_active" class="h-3.5 w-3.5" />
+                      <UserCheck v-else class="h-3.5 w-3.5" />
+                    </button>
+                    <span class="mx-0.5 h-4 w-px bg-border" aria-hidden="true" />
+                    <button
+                      type="button"
                       class="inline-flex h-7 items-center justify-center rounded-md px-2 text-xs font-medium text-destructive transition-colors hover:bg-destructive/10 disabled:cursor-not-allowed disabled:opacity-40"
                       :disabled="auth.user?.id === user.id"
                       :title="auth.user?.id === user.id ? t('adminUsers.selfDeleteTooltip') : t('adminReports.deleteBtn')"
@@ -549,6 +603,13 @@ async function handleConfirmDeleteRole() {
             </TableBody>
           </Table>
         </div>
+        <TablePagination
+          :total="userStore.totalUsers"
+          :limit="pageLimit"
+          :offset="pageOffset"
+          :loading="userStore.loading"
+          @update:offset="(val) => { pageOffset = val; loadUsers() }"
+        />
       </CardContent>
     </Card>
 
@@ -615,6 +676,20 @@ async function handleConfirmDeleteRole() {
               {{ t('adminUsers.passwordKeepHint') }}
             </p>
           </div>
+
+          <label
+            v-if="editingUser"
+            class="flex items-center gap-2.5 rounded-lg border bg-muted/20 px-3 py-2 text-xs font-medium"
+            :class="auth.user?.id === editingUser.id ? 'cursor-not-allowed opacity-60' : 'cursor-pointer'"
+          >
+            <input
+              v-model="formIsActive"
+              type="checkbox"
+              class="h-4 w-4 rounded border-input accent-primary"
+              :disabled="auth.user?.id === editingUser.id"
+            />
+            <span>{{ t('adminUsers.fieldAccountActive') }}</span>
+          </label>
 
           <DialogFooter>
             <Button type="button" variant="outline" :disabled="saving" @click="dialogOpen = false">

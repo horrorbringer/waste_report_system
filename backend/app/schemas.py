@@ -35,10 +35,20 @@ class UserResponse(BaseModel):
     full_name: str
     email: str
     role: str
+    is_active: bool = True
     permissions: list[str] = []
     created_at: datetime
 
     model_config = ConfigDict(from_attributes=True)
+
+
+class UserProfileUpdate(BaseModel):
+    full_name: str = Field(..., min_length=2, max_length=120)
+
+
+class PasswordChangeRequest(BaseModel):
+    current_password: str = Field(..., min_length=1, max_length=128)
+    new_password: str = Field(..., min_length=6, max_length=128)
 
 
 class TokenResponse(BaseModel):
@@ -155,6 +165,7 @@ class ReportResponse(BaseModel):
     latitude: float | None
     longitude: float | None
     photo_path: str | None
+    resolution_photo_path: str | None = None
     status: str
     created_at: datetime
     updated_at: datetime
@@ -203,6 +214,27 @@ class CategoryDistributionItem(BaseModel):
     count: int
 
 
+class NearbyReportItem(BaseModel):
+    id: int
+    title: str
+    status: str
+    location_text: str
+    distance_meters: int
+    created_at: datetime
+
+
+class MapPinReport(BaseModel):
+    id: int
+    title: str
+    status: str
+    latitude: float
+    longitude: float
+    location_text: str
+    category_name: str
+    category_name_km: str | None = None
+    created_at: datetime
+
+
 class AdminDashboardStats(BaseModel):
     total_reports: int
     pending_count: int
@@ -213,6 +245,7 @@ class AdminDashboardStats(BaseModel):
     status_distribution: list[StatusDistributionItem]
     category_distribution: list[CategoryDistributionItem]
     recent_reports: list[ReportResponse]
+    map_pins: list[MapPinReport] = []
 
 
 class AdminUserResponse(BaseModel):
@@ -220,10 +253,25 @@ class AdminUserResponse(BaseModel):
     full_name: str
     email: str
     role: str
+    is_active: bool = True
     created_at: datetime
     report_count: int = 0
 
     model_config = ConfigDict(from_attributes=True)
+
+
+class AdminUsersPage(BaseModel):
+    items: list[AdminUserResponse]
+    total: int
+    limit: int
+    offset: int
+
+
+class AdminReportsPage(BaseModel):
+    items: list[ReportResponse]
+    total: int
+    limit: int
+    offset: int
 
 
 class AdminUserCreate(BaseModel):
@@ -236,6 +284,7 @@ class AdminUserCreate(BaseModel):
 class AdminUserUpdate(BaseModel):
     full_name: str | None = Field(default=None, min_length=2, max_length=120)
     role: str | None = Field(default=None, min_length=2, max_length=40)
+    is_active: bool | None = None
     password: str | None = Field(default=None, min_length=6, max_length=128)
 
 

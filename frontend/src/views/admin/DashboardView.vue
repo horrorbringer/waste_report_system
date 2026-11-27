@@ -2,6 +2,8 @@
 import { computed, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
+import AdminHotspotMap from '@/components/AdminHotspotMap.vue'
+import { formatApiError } from '@/lib/utils'
 import {
   AlertCircle,
   ArrowRight,
@@ -162,7 +164,7 @@ async function handleStatusSave() {
     statusDialogOpen.value = false
     await reportStore.fetchAdminStats()
   } catch (err: any) {
-    updateError.value = err.response?.data?.detail || t('detail.errUpdateFailed')
+    updateError.value = formatApiError(err, t('detail.errUpdateFailed'))
   } finally {
     savingStatus.value = false
   }
@@ -369,6 +371,37 @@ async function handleDeleteReport() {
         </CardContent>
       </Card>
     </div>
+
+    <!-- Waste Hotspot Map -->
+    <Card class="border-border/60 shadow-sm">
+      <CardHeader class="pb-3">
+        <div class="flex flex-wrap items-center justify-between gap-2">
+          <div>
+            <CardTitle class="text-base font-semibold">{{ t('adminDashboard.hotspotMapTitle') }}</CardTitle>
+            <CardDescription class="text-xs">
+              {{ t('adminDashboard.hotspotMapDesc', { count: stats?.map_pins?.length ?? 0 }) }}
+            </CardDescription>
+          </div>
+          <div class="flex items-center gap-3 text-[11px] text-muted-foreground">
+            <span class="inline-flex items-center gap-1.5">
+              <span class="h-2.5 w-2.5 rounded-full bg-amber-500" />
+              {{ t('status.pending') }}
+            </span>
+            <span class="inline-flex items-center gap-1.5">
+              <span class="h-2.5 w-2.5 rounded-full bg-blue-500" />
+              {{ t('status.inProgress') }}
+            </span>
+            <span class="inline-flex items-center gap-1.5">
+              <span class="h-2.5 w-2.5 rounded-full bg-emerald-500" />
+              {{ t('status.resolved') }}
+            </span>
+          </div>
+        </div>
+      </CardHeader>
+      <CardContent>
+        <AdminHotspotMap :pins="stats?.map_pins ?? []" />
+      </CardContent>
+    </Card>
 
     <!-- Enhanced Recent Submissions Table with Status Filter, Search & Grouped Actions -->
     <Card class="border-border/60 shadow-sm">

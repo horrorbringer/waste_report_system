@@ -1,6 +1,9 @@
+import csv
+import io
+import math
 from datetime import datetime, timedelta, timezone
 from fastapi import APIRouter, Depends, File, Form, HTTPException, Query, Response, UploadFile, status
-from sqlalchemy import or_, select, update
+from sqlalchemy import func, or_, select, update
 from sqlalchemy.orm import Session, joinedload
 
 from app.cambodia_areas import Province, districts_by_code, provinces, provinces_by_code
@@ -8,11 +11,13 @@ from app.database import get_db
 from app.deps import get_current_user, require_permission, require_resident_or_admin, user_has_permission
 from app.models import Category, StatusHistory, User, WasteReport
 from app.schemas import (
+    AdminReportsPage,
     BulkActionResponse,
     BulkDeleteRequest,
     BulkStatusRequest,
     CommunityReport,
     CommunityReportsPage,
+    NearbyReportItem,
     DistrictCode,
     ReportDetailResponse,
     ReportPublication,
@@ -328,21 +333,12 @@ def list_my_reports(
     return [serialize_report(r) for r in reports]
 
 
-@router.get("", response_model=list[ReportResponse])
-def list_all_reports(
-    report_status: str | None = Query(default=None, alias="status"),
-    category_id: int | None = Query(default=None),
-    search: str | None = Query(default=None),
-    limit: int = Query(default=100, ge=1, le=500),
-    offset: int = Query(default=0, ge=0),
-    db: Session = Depends(get_db),
-    _: User = Depends(require_permission("reports:view_all")),
-) -> list[ReportResponse]:
-    stmt = (
-        select(WasteReport)
-        .join(User, WasteReport.user_id == User.id)
-        .options(joinedload(WasteReport.user), joinedload(WasteReport.category))
-    )
+def _apply_admin_report_filters(
+    stmt,
+    report_status: str | None,
+    category_id: int | None,
+    search: str | None,
+):
     if report_status and report_status in VALID_STATUSES:
         stmt = stmt.where(WasteReport.status == report_status)
     if category_id is not None:
@@ -358,10 +354,160 @@ def list_all_reports(
                 User.email.ilike(term),
             )
         )
+    return stmt
 
-    stmt = stmt.order_by(WasteReport.created_at.desc()).offset(offset).limit(limit)
+
+def _build_admin_reports_stmt(
+    report_status: str | None,
+    category_id: int | None,
+    search: str | None,
+):
+    stmt = (
+        select(WasteReport)
+        .join(User, WasteReport.user_id == User.id)
+        .options(joinedload(WasteReport.user), joinedload(WasteReport.category))
+    )
+    return _apply_admin_report_filters(stmt, report_status, category_id, search).order_by(
+        WasteReport.created_at.desc()
+    )
+
+
+@router.get("", response_model=AdminReportsPage)
+def list_all_reports(
+    report_status: str | None = Query(default=None, alias="status"),
+    category_id: int | None = Query(default=None),
+    search: str | None = Query(default=None),
+    limit: int = Query(default=15, ge=1, le=200),
+    offset: int = Query(default=0, ge=0),
+    db: Session = Depends(get_db),
+    _: User = Depends(require_permission("reports:view_all")),
+) -> AdminReportsPage:
+    count_stmt = _apply_admin_report_filters(
+        select(func.count(WasteReport.id)).join(User, WasteReport.user_id == User.id),
+        report_status,
+        category_id,
+        search,
+    )
+    total = int(db.scalar(count_stmt) or 0)
+    stmt = _build_admin_reports_stmt(report_status, category_id, search).offset(offset).limit(limit)
     reports = db.scalars(stmt).all()
-    return [serialize_report(r) for r in reports]
+    return AdminReportsPage(
+        items=[serialize_report(r) for r in reports],
+        total=total,
+        limit=limit,
+        offset=offset,
+    )
+
+
+@router.get("/export")
+def export_reports_csv(
+    report_status: str | None = Query(default=None, alias="status"),
+    category_id: int | None = Query(default=None),
+    search: str | None = Query(default=None),
+    db: Session = Depends(get_db),
+    _: User = Depends(require_permission("reports:view_all")),
+) -> Response:
+    """Export filtered waste reports as a UTF-8 BOM CSV file."""
+    reports = db.scalars(_build_admin_reports_stmt(report_status, category_id, search)).all()
+
+    buf = io.StringIO()
+    buf.write("\ufeff")
+    writer = csv.writer(buf)
+    writer.writerow(
+        [
+            "ID",
+            "Title",
+            "Status",
+            "Category",
+            "Reporter Name",
+            "Reporter Email",
+            "Location",
+            "Province Code",
+            "District Code",
+            "Latitude",
+            "Longitude",
+            "Created At",
+        ]
+    )
+    for r in reports:
+        writer.writerow(
+            [
+                r.id,
+                r.title,
+                r.status,
+                r.category.name if r.category else "",
+                r.user.full_name if r.user else "",
+                r.user.email if r.user else "",
+                r.location_text,
+                r.public_province or "",
+                r.public_district or r.location_district or "",
+                r.latitude if r.latitude is not None else "",
+                r.longitude if r.longitude is not None else "",
+                r.created_at.isoformat() if r.created_at else "",
+            ]
+        )
+
+    filename = f"waste_reports_{datetime.now(timezone.utc).strftime('%Y%m%d_%H%M%S')}.csv"
+    return Response(
+        content=buf.getvalue().encode("utf-8"),
+        media_type="text/csv; charset=utf-8",
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+    )
+
+
+def _haversine_meters(lat1: float, lon1: float, lat2: float, lon2: float) -> float:
+    earth_radius = 6_371_000.0
+    p1 = math.radians(lat1)
+    p2 = math.radians(lat2)
+    dp = math.radians(lat2 - lat1)
+    dl = math.radians(lon2 - lon1)
+    a = math.sin(dp / 2) ** 2 + math.cos(p1) * math.cos(p2) * math.sin(dl / 2) ** 2
+    return 2 * earth_radius * math.atan2(math.sqrt(a), math.sqrt(1 - a))
+
+
+@router.get("/nearby", response_model=list[NearbyReportItem])
+def find_nearby_unresolved_reports(
+    lat: float = Query(..., ge=-90.0, le=90.0),
+    lng: float = Query(..., ge=-180.0, le=180.0),
+    radius_meters: int = Query(default=200, ge=25, le=2000),
+    db: Session = Depends(get_db),
+    _: User = Depends(get_current_user),
+) -> list[NearbyReportItem]:
+    """Find unresolved waste reports near a GPS coordinate to warn about potential duplicates."""
+    lat_delta = radius_meters / 111_000.0
+    lng_delta = radius_meters / max(111_000.0 * math.cos(math.radians(lat)), 10_000.0)
+
+    candidates = db.scalars(
+        select(WasteReport)
+        .where(
+            WasteReport.status != "Resolved",
+            WasteReport.latitude.is_not(None),
+            WasteReport.longitude.is_not(None),
+            WasteReport.latitude.between(lat - lat_delta, lat + lat_delta),
+            WasteReport.longitude.between(lng - lng_delta, lng + lng_delta),
+        )
+        .order_by(WasteReport.created_at.desc())
+        .limit(30)
+    ).all()
+
+    nearby: list[NearbyReportItem] = []
+    for r in candidates:
+        if r.latitude is None or r.longitude is None:
+            continue
+        dist = _haversine_meters(lat, lng, r.latitude, r.longitude)
+        if dist <= radius_meters:
+            nearby.append(
+                NearbyReportItem(
+                    id=r.id,
+                    title=r.title,
+                    status=r.status,
+                    location_text=r.location_text,
+                    distance_meters=int(round(dist)),
+                    created_at=r.created_at,
+                )
+            )
+    nearby.sort(key=lambda item: item.distance_meters)
+    return nearby[:5]
 
 
 @router.get("/{report_id}", response_model=ReportDetailResponse)
@@ -449,6 +595,41 @@ def update_report_status(
     return serialize_report_detail(loaded)  # type: ignore[arg-type]
 
 
+@router.post("/{report_id}/resolution-photo", response_model=ReportDetailResponse)
+async def upload_resolution_photo(
+    report_id: int,
+    photo: UploadFile = File(...),
+    db: Session = Depends(get_db),
+    _: User = Depends(require_permission("reports:update_status")),
+) -> ReportDetailResponse:
+    """Attach or replace an 'after cleanup' resolution photo for a report."""
+    report = db.get(WasteReport, report_id)
+    if report is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Report not found.")
+
+    old_resolution_photo = report.resolution_photo_path
+    async with store_report_photos([photo], db) as stored_paths:
+        if not stored_paths:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Photo upload failed.")
+        report.resolution_photo_path = stored_paths[0]
+        report.updated_at = datetime.now(timezone.utc)
+        db.commit()
+
+    if old_resolution_photo:
+        delete_report_photos([old_resolution_photo], db)
+
+    loaded = db.scalar(
+        select(WasteReport)
+        .options(
+            joinedload(WasteReport.user),
+            joinedload(WasteReport.category),
+            joinedload(WasteReport.status_history).joinedload(StatusHistory.actor),
+        )
+        .where(WasteReport.id == report.id)
+    )
+    return serialize_report_detail(loaded)  # type: ignore[arg-type]
+
+
 @router.delete("/{report_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_report(
     report_id: int,
@@ -472,6 +653,8 @@ def delete_report(
             )
 
     photo_urls = list(report.photo_paths or ([report.photo_path] if report.photo_path else []))
+    if report.resolution_photo_path:
+        photo_urls.append(report.resolution_photo_path)
     db.delete(report)
     db.commit()
     delete_report_photos(photo_urls, db)
@@ -520,6 +703,8 @@ def bulk_delete_reports(
     photo_urls: list[str] = []
     for report in reports:
         photo_urls.extend(report.photo_paths or ([report.photo_path] if report.photo_path else []))
+        if report.resolution_photo_path:
+            photo_urls.append(report.resolution_photo_path)
         db.delete(report)
 
     db.commit()

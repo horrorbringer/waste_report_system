@@ -1,23 +1,28 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import api from '@/services/api'
-import type { AdminUser, PermissionDefinition, RoleItem, UserRole } from '@/types'
+import type { AdminUser, PaginatedResponse, PermissionDefinition, RoleItem, UserRole } from '@/types'
 
 export const useUserStore = defineStore('users', () => {
   const users = ref<AdminUser[]>([])
+  const totalUsers = ref(0)
   const roles = ref<RoleItem[]>([])
   const permissions = ref<PermissionDefinition[]>([])
   const loading = ref(false)
   const rolesLoading = ref(false)
 
-  async function fetchUsers(params?: { search?: string; role?: string }) {
+  async function fetchUsers(params?: { search?: string; role?: string; limit?: number; offset?: number }) {
     loading.value = true
     try {
-      const cleanParams: Record<string, string> = {}
+      const cleanParams: Record<string, string | number> = {
+        limit: params?.limit ?? 15,
+        offset: params?.offset ?? 0,
+      }
       if (params?.search?.trim()) cleanParams.search = params.search.trim()
       if (params?.role && params.role !== 'ALL') cleanParams.role = params.role
-      const { data } = await api.get<AdminUser[]>('/admin/users', { params: cleanParams })
-      users.value = data
+      const { data } = await api.get<PaginatedResponse<AdminUser>>('/admin/users', { params: cleanParams })
+      users.value = data.items
+      totalUsers.value = data.total
       return data
     } finally {
       loading.value = false
@@ -37,11 +42,12 @@ export const useUserStore = defineStore('users', () => {
 
   async function updateUser(
     id: number,
-    payload: { full_name?: string; role?: UserRole; password?: string | null },
+    payload: { full_name?: string; role?: UserRole; is_active?: boolean; password?: string | null },
   ) {
     const body: Record<string, unknown> = {}
     if (payload.full_name !== undefined) body.full_name = payload.full_name
     if (payload.role !== undefined) body.role = payload.role
+    if (payload.is_active !== undefined) body.is_active = payload.is_active
     if (payload.password) body.password = payload.password
 
     const { data } = await api.patch<AdminUser>(`/admin/users/${id}`, body)
@@ -100,6 +106,7 @@ export const useUserStore = defineStore('users', () => {
 
   return {
     users,
+    totalUsers,
     roles,
     permissions,
     loading,
